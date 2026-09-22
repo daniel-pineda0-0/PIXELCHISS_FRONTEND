@@ -11,8 +11,14 @@ config_version=5
 [application]
 
 config/name="PixelChiss"
+run/main_scene="res://scenes/pantalla_sala.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
+
+[autoload]
+
+ApiClient="*uid://ccxitb1757cxx"
+Sesion="*uid://dv5wncbn41mux"
 
 [display]
 

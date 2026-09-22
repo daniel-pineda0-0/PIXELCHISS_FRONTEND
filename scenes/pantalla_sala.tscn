@@ -1,0 +1,159 @@
+[gd_scene format=3 uid="uid://0do78hxu4inw"]
+
+[sub_resource type="GDScript" id="GDScript_dqlft"]
+script/source = "extends Control
+## Pantalla que aparece justo después del login con Google.
+##
+## Ya no se elige entre \"crear\" o \"unirse\": al entrar, el jugador queda
+## como anfitrión de una sala nueva automáticamente (US-003 se dispara
+## solo, sin botón de por medio) y ve su código para compartir.
+##
+## Debajo se deja un campo por si el jugador prefiere unirse a la sala
+## de alguien más (US-004) en lugar de quedarse como anfitrión de la
+## suya — sin necesidad de una pantalla intermedia aparte.
+
+@onready var codigo_label: Label = %CodigoLabel
+@onready var codigo_input: LineEdit = %CodigoInput
+@onready var unirse_btn: Button = %UnirseBoton
+@onready var mensaje_label: Label = %MensajeError
+@onready var cargando_label: Label = %Cargando
+
+
+func _ready() -> void:
+	mensaje_label.text = \"\"
+
+	unirse_btn.pressed.connect(_on_unirse_pressed)
+	codigo_input.text_submitted.connect(func(_texto: String): _on_unirse_pressed())
+
+	ApiClient.sala_creada.connect(_on_sala_lista)
+	ApiClient.sala_unida.connect(_on_sala_lista)
+	ApiClient.sala_error.connect(_on_sala_error)
+
+	_set_cargando(true)
+
+	if Sesion.tiene_sesion():
+		ApiClient.crear_sala()
+	else:
+		# TEMPORAL: esta pantalla asume que ya se hizo login antes de
+		# llegar aquí (Sesion.player_id/nombre ya llenos). Mientras la
+		# pantalla de login real de tu compañero no esté integrada,
+		# hacemos un mock-login aquí mismo para poder seguir probando
+		# esta escena sola con F6. Borrar este \"else\" cuando el login
+		# real ya deje la sesión lista antes de entrar a esta escena.
+		ApiClient.login_ok.connect(_on_login_temporal_ok)
+		ApiClient.mock_login(\"Jugador de prueba\")
+
+
+func _on_login_temporal_ok(_data: Dictionary) -> void:
+	ApiClient.login_ok.disconnect(_on_login_temporal_ok)
+	ApiClient.crear_sala()
+
+
+func _on_unirse_pressed() -> void:
+	var codigo := codigo_input.text.strip_edges()
+	if codigo.is_empty():
+		mensaje_label.text = \"Escribe un código de sala.\"
+		return
+	mensaje_label.text = \"\"
+	_set_cargando(true)
+	ApiClient.unirse_sala(codigo)
+
+
+func _on_sala_lista(data: Dictionary) -> void:
+	_set_cargando(false)
+	mensaje_label.text = \"\"
+	if Sesion.es_host:
+		codigo_label.text = \"Eres el anfitrión — código: %s\" % data.get(\"code\", \"\")
+	else:
+		codigo_label.text = \"Te uniste a la sala: %s\" % data.get(\"code\", \"\")
+
+
+func _on_sala_error(codigo: String, mensaje: String) -> void:
+	_set_cargando(false)
+	match codigo:
+		\"CODIGO_INVALIDO\":
+			mensaje_label.text = \"Ese código no existe.\"
+		\"SALA_LLENA\":
+			mensaje_label.text = \"Esa sala ya está llena (máx. 4 jugadores).\"
+		\"PARTIDA_INICIADA\":
+			mensaje_label.text = \"Esa partida ya está en curso.\"
+		\"EXPULSADO\":
+			mensaje_label.text = \"Fuiste expulsado de esa sala.\"
+		_:
+			mensaje_label.text = mensaje
+
+
+func _set_cargando(activo: bool) -> void:
+	cargando_label.visible = activo
+	unirse_btn.disabled = activo
+	codigo_input.editable = not activo
+"
+
+[node name="PantallaSala" type="Control" unique_id=1653346670]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_dqlft")
+
+[node name="Centro" type="CenterContainer" parent="." unique_id=195870907]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="VBoxContainer" parent="Centro" unique_id=1614180412]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Titulo" type="Label" parent="Centro/Panel" unique_id=533411588]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "PixelChiss"
+horizontal_alignment = 1
+
+[node name="CodigoLabel" type="Label" parent="Centro/Panel" unique_id=1532547265]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Creando tu sala..."
+horizontal_alignment = 1
+
+[node name="Separador" type="Label" parent="Centro/Panel" unique_id=1333208074]
+layout_mode = 2
+text = "¿Tienes un código de otra sala?"
+horizontal_alignment = 1
+
+[node name="FilaUnirse" type="HBoxContainer" parent="Centro/Panel" unique_id=1652282328]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CodigoInput" type="LineEdit" parent="Centro/Panel/FilaUnirse" unique_id=1154660273]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+placeholder_text = "Código de sala"
+max_length = 5
+
+[node name="UnirseBoton" type="Button" parent="Centro/Panel/FilaUnirse" unique_id=647780655]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Unirse"
+
+[node name="MensajeError" type="Label" parent="Centro/Panel" unique_id=230361917]
+unique_name_in_owner = true
+modulate = Color(1, 0.4, 0.4, 1)
+layout_mode = 2
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Cargando" type="Label" parent="Centro/Panel" unique_id=1192337779]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "Cargando..."
+horizontal_alignment = 1

@@ -22,9 +22,6 @@ script/source = "extends Control
 func _ready() -> void:
 	mensaje_label.text = \"\"
 
-	unirse_btn.pressed.connect(_on_unirse_pressed)
-	codigo_input.text_submitted.connect(func(_texto: String): _on_unirse_pressed())
-
 	ApiClient.sala_creada.connect(_on_sala_lista)
 	ApiClient.sala_unida.connect(_on_sala_lista)
 	ApiClient.sala_error.connect(_on_sala_error)
@@ -49,14 +46,6 @@ func _on_login_temporal_ok(_data: Dictionary) -> void:
 	ApiClient.crear_sala()
 
 
-func _on_unirse_pressed() -> void:
-	var codigo := codigo_input.text.strip_edges()
-	if codigo.is_empty():
-		mensaje_label.text = \"Escribe un código de sala.\"
-		return
-	mensaje_label.text = \"\"
-	_set_cargando(true)
-	ApiClient.unirse_sala(codigo)
 
 
 func _on_sala_lista(data: Dictionary) -> void:
@@ -87,6 +76,15 @@ func _set_cargando(activo: bool) -> void:
 	cargando_label.visible = activo
 	unirse_btn.disabled = activo
 	codigo_input.editable = not activo
+
+func _on_unirse_boton_pressed() -> void:
+	var codigo := codigo_input.text.strip_edges()
+	if codigo.is_empty():
+		mensaje_label.text = \"Escribe un código de sala.\"
+		return
+	mensaje_label.text = \"\"
+	_set_cargando(true)
+	ApiClient.unirse_sala(codigo)
 "
 
 [node name="PantallaSala" type="Control" unique_id=1653346670]
@@ -157,3 +155,5 @@ visible = false
 layout_mode = 2
 text = "Cargando..."
 horizontal_alignment = 1
+
+[connection signal="pressed" from="Centro/Panel/FilaUnirse/UnirseBoton" to="." method="_on_unirse_boton_pressed"]

@@ -42,9 +42,6 @@ func _on_login_temporal_ok(_data: Dictionary) -> void:
 	ApiClient.login_ok.disconnect(_on_login_temporal_ok)
 	ApiClient.crear_sala()
 
-
-
-
 func _on_sala_lista(data: Dictionary) -> void:
 	_set_cargando(false)
 	error_label.text = ""
@@ -67,7 +64,6 @@ func _on_sala_error(codigo: String, mensaje: String) -> void:
 			error_label.text = "Fuiste expulsado de esa sala."
 		_:
 			error_label.text = mensaje
-
 
 func _set_cargando(activo: bool) -> void:
 	load_label.visible = activo

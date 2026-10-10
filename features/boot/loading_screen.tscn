@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://ghduxfycgf7"]
+
+[node name="LoadingScreen" type="Control" unique_id=436969487]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="." unique_id=472295036]
+layout_mode = 0
+offset_left = 532.0
+offset_top = 312.0
+offset_right = 620.0
+offset_bottom = 335.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Cargando..."

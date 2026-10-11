@@ -20,6 +20,7 @@ config/icon="res://icon.svg"
 Config="*uid://dtwk74nrnbdlr"
 Api="*uid://ccxitb1757cxx"
 Session="*uid://dv5wncbn41mux"
+GameState="*uid://byqcjnesry01l"
 
 [display]
 

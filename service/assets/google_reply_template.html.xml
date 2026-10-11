@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PixelChiss · {TITLE}</title>
+<style>
+	:root {
+		--bg: #15131c;
+		--bg-tile: #1b1925;
+		--panel: #221f2e;
+		--panel-edge: #0d0c12;
+		--text: #f1eee6;
+		--muted: #9c97ad;
+		--accent: {ACCENT};
+		--on-accent: #15131c;
+	}
+	* { box-sizing: border-box; margin: 0; padding: 0; }
+
+	body {
+		min-height: 100vh;
+		display: grid;
+		place-items: center;
+		padding: 24px;
+		color: var(--text);
+		font-family: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, "Courier New", monospace;
+		background-color: var(--bg);
+		/* tablero de ajedrez tenue de fondo */
+		background-image:
+			conic-gradient(var(--bg-tile) 25%, transparent 0 50%, var(--bg-tile) 0 75%, transparent 0);
+		background-size: 64px 64px;
+	}
+
+	.card {
+		width: 100%;
+		max-width: 460px;
+		background: var(--panel);
+		padding: 32px 28px 28px;
+		/* borde "pixelado" con esquinas escalonadas */
+		box-shadow:
+			0 -4px 0 0 var(--panel-edge), 0 4px 0 0 var(--panel-edge),
+			-4px 0 0 0 var(--panel-edge), 4px 0 0 0 var(--panel-edge),
+			0 12px 0 0 rgba(0,0,0,.35);
+		text-align: center;
+	}
+
+	.brand {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 12px;
+		margin-bottom: 24px;
+		font-size: 14px;
+		letter-spacing: 4px;
+		font-weight: 700;
+		color: var(--muted);
+	}
+	#pawn rect { fill: var(--accent); }
+	#pawn { width: 28px; height: 33px; image-rendering: pixelated; }
+
+	.status {
+		display: inline-block;
+		padding: 5px 12px;
+		margin-bottom: 18px;
+		background: var(--accent);
+		color: var(--on-accent);
+		font-size: 12px;
+		font-weight: 700;
+		letter-spacing: 2px;
+		text-transform: uppercase;
+	}
+
+	h1 { font-size: 22px; line-height: 1.3; margin-bottom: 12px; }
+	p  { font-size: 14px; line-height: 1.6; color: var(--muted); }
+
+	.hint {
+		margin-top: 24px;
+		padding-top: 18px;
+		border-top: 2px dashed #36324a;
+		font-size: 12px;
+		color: var(--muted);
+	}
+	.hint b { color: var(--accent); }
+
+	@media (prefers-reduced-motion: no-preference) {
+		#pawn { animation: hop 1.2s steps(2, end) infinite; }
+		@keyframes hop { 50% { transform: translateY(-3px); } }
+	}
+</style>
+</head>
+<body>
+	<main class="card">
+		<div class="brand">
+			<svg id="pawn" viewBox="0 0 9 11" shape-rendering="crispEdges" aria-hidden="true"></svg>
+			PIXELCHISS
+		</div>
+
+		<div class="status">{STATUS_LABEL}</div>
+		<h1>{TITLE}</h1>
+		<p>{BODY}</p>
+
+		<div class="hint">Ya puedes <b>cerrar esta pestaña</b> y volver al juego.</div>
+	</main>
+
+	<script>
+		// peón en pixel art generado desde una cuadrícula
+		const grid = [
+			"...XXX...",
+			"..XXXXX..",
+			"..XXXXX..",
+			"...XXX...",
+			"..XXXXX..",
+			"...XXX...",
+			"...XXX...",
+			"..XXXXX..",
+			".XXXXXXX.",
+			".XXXXXXX.",
+			"XXXXXXXXX"
+		];
+		const svg = document.getElementById("pawn");
+		grid.forEach((row, y) => [...row].forEach((c, x) => {
+			if (c !== "X") return;
+			const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+			r.setAttribute("x", x); r.setAttribute("y", y);
+			r.setAttribute("width", 1); r.setAttribute("height", 1);
+			svg.appendChild(r);
+		}));
+	</script>
+</body>
+</html>

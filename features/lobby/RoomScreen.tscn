@@ -1,7 +1,5 @@
 [gd_scene format=3 uid="uid://cr41gva187550"]
 
-[ext_resource type="Script" uid="uid://cvdwloabh168j" path="res://features/lobby/room_screen.gd" id="1_2ovvf"]
-
 [node name="RoomScreen" type="Control" unique_id=638691911]
 layout_mode = 3
 anchors_preset = 15
@@ -9,7 +7,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_2ovvf")
 
 [node name="Centro" type="CenterContainer" parent="." unique_id=1855712990]
 layout_mode = 1

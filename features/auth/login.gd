@@ -17,7 +17,7 @@ func _on_button_pressed() -> void:
 func _on_login_finished(ok: bool, error: String) -> void:
 	_login.queue_free()
 	if ok:
-		get_tree().change_scene_to_file("res://features/LoadingScreen.tscn")
+		get_tree().change_scene_to_file(GameState.LOADING_SCENE)
 	else:
 		status.text = "No se pudo iniciar sesión: " + error
 		btn.disabled = false

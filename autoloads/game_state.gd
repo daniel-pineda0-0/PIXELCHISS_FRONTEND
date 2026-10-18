@@ -1,19 +1,31 @@
 extends Node
 
-const states :Array=[
-	"initializing",
-	"lobby",
-	"game"
-]
-const next_scene_paths:Dictionary= {
-	"initializing":"res://features/lobby/RoomScreen.tscn",
-	"lobby":"",
-	"game":"res://features/lobby/RoomScreen.tscn"
+enum State { BOOT, LOBBY, GAME }
+
+const LOGIN_SCENE := "res://features/auth/LogginScreen.tscn"
+
+const SCENES := {
+	State.LOBBY: "res://features/lobby/RoomScreen.tscn",
+	State.GAME: "res://features/lobby/RoomScreen.tscn",
 }
-var state:=0
 
-func nextState()->void:
-	state+=1
+signal state_changed(new_state: State)
 
-func next_scene_path()->String:
-	return next_scene_paths[states[state]]
+var state: State = State.BOOT
+
+func set_state(new_state: State) -> void:
+	if state == new_state:
+		return
+	state = new_state
+	state_changed.emit(state)
+
+func resolve_next_scene() -> String:
+	if state == State.BOOT:
+		var logged: bool = Session.is_logged_in() or await Session.try_restore()
+		if not logged:
+			return LOGIN_SCENE    
+		set_state(State.LOBBY)
+	return SCENES[state]
+
+func reset() -> void:
+	set_state(State.BOOT)

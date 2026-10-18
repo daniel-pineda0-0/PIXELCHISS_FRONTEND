@@ -51,3 +51,6 @@ func clear() -> void:
 	access_token = ""; refresh_token = ""; profile = {}
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(PATH))
 	logged_out.emit()
+
+func is_logged_in() -> bool:
+	return access_token != "" and not profile.is_empty()

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://ghduxfycgf7"]
 
-[ext_resource type="Script" uid="uid://bqvcplpn0e2uu" path="res://features/loading/loading_screen.gd" id="1_bwf8g"]
+[ext_resource type="Script" uid="uid://bqvcplpn0e2uu" path="res://features/loading/loading_screen.gd" id="1_0g1l4"]
 
 [node name="LoadingScreen" type="Control" unique_id=436969487]
 layout_mode = 3
@@ -9,14 +9,19 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_bwf8g")
+script = ExtResource("1_0g1l4")
 
 [node name="Label" type="Label" parent="." unique_id=472295036]
-layout_mode = 0
-offset_left = 532.0
-offset_top = 312.0
-offset_right = 620.0
-offset_bottom = 335.0
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -44.0
+offset_top = -11.5
+offset_right = 44.0
+offset_bottom = 11.5
 grow_horizontal = 2
 grow_vertical = 2
 text = "Cargando..."

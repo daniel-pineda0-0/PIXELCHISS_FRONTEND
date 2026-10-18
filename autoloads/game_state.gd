@@ -2,7 +2,8 @@ extends Node
 
 enum State { BOOT, LOBBY, GAME }
 
-const LOGIN_SCENE := "res://features/auth/LogginScreen.tscn"
+const LOGIN_SCENE := "res://features/auth/loggin_screen.tscn"
+const LOADING_SCENE := "res://features/loading/loading_screen.tscn"
 
 const SCENES := {
 	State.LOBBY: "res://features/lobby/RoomScreen.tscn",

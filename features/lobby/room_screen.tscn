@@ -1,0 +1,120 @@
+[gd_scene format=3 uid="uid://c0gnq72brpw12"]
+
+[ext_resource type="Texture2D" uid="uid://dn5d44p2mfg11" path="res://service/assets/ui/theme/ph_bt_exit_normal.png" id="1_233tq"]
+[ext_resource type="Script" uid="uid://7oc2uigl2osn" path="res://features/lobby/room_screen.gd" id="1_rjadh"]
+[ext_resource type="Texture2D" uid="uid://eeh0uxnd7r6" path="res://service/assets/ui/theme/ph_bt_exit_pressed.png" id="2_lrhn8"]
+[ext_resource type="Texture2D" uid="uid://biefvw2en2v6b" path="res://service/assets/ui/theme/ph_bt_exit_hover.png" id="3_lrhn8"]
+[ext_resource type="PackedScene" uid="uid://b37l5rb5rqvhb" path="res://features/lobby/player_card.tscn" id="4_5jx17"]
+[ext_resource type="PackedScene" uid="uid://dlt1rrw34130w" path="res://features/lobby/map_card.tscn" id="5_r206s"]
+[ext_resource type="Texture2D" uid="uid://de24lfpvv8lgo" path="res://service/assets/ui/theme/ph_bt_ready_normal.png" id="6_du8pq"]
+[ext_resource type="Texture2D" uid="uid://bo0qx431uolfb" path="res://service/assets/ui/theme/ph_bt_ready_pressed.png" id="7_rjadh"]
+[ext_resource type="Texture2D" uid="uid://b3edpxlp0ri18" path="res://service/assets/ui/theme/ph_bt_ready_hover.png" id="8_x01b4"]
+[ext_resource type="LabelSettings" uid="uid://dft2d8hc78d73" path="res://service/assets/ui/prefabs/new_label_settings.tres" id="10_x01b4"]
+
+[node name="RoomScreen" type="Control" unique_id=1294898189]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_rjadh")
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=2036031902]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ExitButton" type="TextureButton" parent="." unique_id=2032148240]
+layout_mode = 1
+offset_left = 16.0
+offset_top = 9.0
+offset_right = 48.0
+offset_bottom = 41.0
+texture_normal = ExtResource("1_233tq")
+texture_pressed = ExtResource("2_lrhn8")
+texture_hover = ExtResource("3_lrhn8")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=597591302]
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -121.0
+offset_bottom = 121.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="GridContainer" type="GridContainer" parent="HBoxContainer" unique_id=2111735050]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+columns = 2
+
+[node name="PlayerCard" parent="HBoxContainer/GridContainer" unique_id=2081797781 instance=ExtResource("4_5jx17")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PlayerCard2" parent="HBoxContainer/GridContainer" unique_id=1373962773 instance=ExtResource("4_5jx17")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PlayerCard3" parent="HBoxContainer/GridContainer" unique_id=2011886842 instance=ExtResource("4_5jx17")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PlayerCard4" parent="HBoxContainer/GridContainer" unique_id=206550929 instance=ExtResource("4_5jx17")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="HBoxContainer" unique_id=1466770546]
+layout_mode = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="HBoxContainer/VBoxContainer2" unique_id=1741212352]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/VBoxContainer2/PanelContainer" unique_id=1825450397]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="MapCard" parent="HBoxContainer/VBoxContainer2/PanelContainer/VBoxContainer" unique_id=1226306134 instance=ExtResource("5_r206s")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="MapCard2" parent="HBoxContainer/VBoxContainer2/PanelContainer/VBoxContainer" unique_id=1524354537 instance=ExtResource("5_r206s")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ReadyButton" type="TextureButton" parent="HBoxContainer/VBoxContainer2" unique_id=1191759384]
+layout_mode = 2
+size_flags_horizontal = 4
+texture_normal = ExtResource("6_du8pq")
+texture_pressed = ExtResource("7_rjadh")
+texture_hover = ExtResource("8_x01b4")
+
+[node name="CodeContainer" type="PanelContainer" parent="HBoxContainer/VBoxContainer2" unique_id=1377705813]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/VBoxContainer2/CodeContainer" unique_id=920834238]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HBoxContainer/VBoxContainer2/CodeContainer/VBoxContainer" unique_id=1397029751]
+layout_mode = 2
+text = "Room code:"
+label_settings = ExtResource("10_x01b4")
+
+[node name="RoomCodeLabel" type="Label" parent="HBoxContainer/VBoxContainer2/CodeContainer/VBoxContainer" unique_id=1708827436]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Codigo"
+label_settings = ExtResource("10_x01b4")
+horizontal_alignment = 1
+
+[connection signal="pressed" from="ExitButton" to="." method="_on_exit_button_pressed"]
+[connection signal="pressed" from="HBoxContainer/VBoxContainer2/ReadyButton" to="." method="_on_ready_button_pressed"]

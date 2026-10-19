@@ -6,8 +6,8 @@ const LOGIN_SCENE := "res://features/auth/loggin_screen.tscn"
 const LOADING_SCENE := "res://features/loading/loading_screen.tscn"
 
 const SCENES := {
-	State.LOBBY: "res://features/lobby/RoomScreen.tscn",
-	State.GAME: "res://features/lobby/RoomScreen.tscn",
+	State.LOBBY: "res://features/lobby/room_screen.tscn",
+	State.GAME: "res://features/lobby/room_screen.tscn",
 }
 
 signal state_changed(new_state: State)

@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://42lrr6godspd"]
+
+[ext_resource type="Script" uid="uid://c1g3o8anfqeqm" path="res://kick_player.gd" id="1_36qgy"]
+
+[node name="KickButton" type="Button" unique_id=1493822583]
+offset_right = 8.0
+offset_bottom = 8.0
+text = "Kick"
+script = ExtResource("1_36qgy")

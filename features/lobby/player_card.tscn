@@ -3,39 +3,38 @@
 [ext_resource type="Texture2D" uid="uid://bl4aw1cgqd51t" path="res://service/assets/ui/icons/ph_player_card_crown.png" id="1_g7hnm"]
 [ext_resource type="Script" uid="uid://djs3qcsnsnhju" path="res://features/lobby/player_card.gd" id="1_xlxat"]
 [ext_resource type="Texture2D" uid="uid://gmo3yhvj8tta" path="res://service/assets/ui/icons/ph_player_card_color_circle.png" id="2_xlxat"]
-[ext_resource type="LabelSettings" uid="uid://dft2d8hc78d73" path="res://service/assets/ui/prefabs/new_label_settings.tres" id="4_xlxat"]
+[ext_resource type="LabelSettings" uid="uid://dft2d8hc78d73" path="res://service/assets/ui/prefabs/PixelFontWhite.tres" id="4_xlxat"]
 
 [node name="PlayerCard" type="Control" unique_id=2081797781]
-custom_minimum_size = Vector2(128, 128)
+custom_minimum_size = Vector2(58, 68)
+propagate_maximum_size = true
 layout_mode = 3
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-grow_horizontal = 2
-grow_vertical = 2
+anchors_preset = 0
+offset_right = 10.0
+offset_bottom = 28.0
+size_flags_horizontal = 4
+size_flags_vertical = 4
 script = ExtResource("1_xlxat")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1861133662]
 layout_mode = 1
-anchors_preset = 8
+anchors_preset = 5
 anchor_left = 0.5
-anchor_top = 0.5
 anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -49.0
-offset_top = -49.5
-offset_right = 49.0
-offset_bottom = 49.5
+offset_left = -28.0
+offset_right = 28.0
+offset_bottom = 74.0
 grow_horizontal = 2
-grow_vertical = 2
+theme_override_constants/separation = 1
+alignment = 1
 
 [node name="AvatarContainer" type="CenterContainer" parent="VBoxContainer" unique_id=656555784]
 layout_mode = 2
+size_flags_horizontal = 4
 
 [node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/AvatarContainer" unique_id=575539700]
 layout_mode = 2
+theme_override_constants/separation = 0
 
 [node name="Crown" type="TextureRect" parent="VBoxContainer/AvatarContainer/VBoxContainer" unique_id=1604811009]
 unique_name_in_owner = true
@@ -54,13 +53,19 @@ unique_name_in_owner = true
 layout_mode = 2
 
 [node name="NamePanel" type="PanelContainer" parent="VBoxContainer" unique_id=2096667097]
+clip_contents = true
 layout_mode = 2
 size_flags_horizontal = 4
+size_flags_vertical = 0
 
 [node name="NameLabel" type="Label" parent="VBoxContainer/NamePanel" unique_id=761307117]
 unique_name_in_owner = true
 texture_filter = 2
+custom_maximum_size = Vector2(58, 20)
 layout_mode = 2
 size_flags_horizontal = 4
-text = "nombre jugador"
+text = "Nombre
+jugador"
 label_settings = ExtResource("4_xlxat")
+horizontal_alignment = 1
+autowrap_mode = 2

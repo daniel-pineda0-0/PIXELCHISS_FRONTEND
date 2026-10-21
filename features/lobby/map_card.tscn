@@ -3,21 +3,17 @@
 [ext_resource type="Script" uid="uid://jdul2ip0qjck" path="res://map_card.gd" id="1_gv058"]
 [ext_resource type="Texture2D" uid="uid://xcoijr2mc1oy" path="res://service/assets/ui/icons/ph_map_card_minimap_1.png" id="2_w8oua"]
 [ext_resource type="Texture2D" uid="uid://bd1qaf01sstdf" path="res://service/assets/ui/icons/ph_map_card_user_icon.png" id="3_ovhd4"]
-[ext_resource type="LabelSettings" uid="uid://dft2d8hc78d73" path="res://service/assets/ui/prefabs/new_label_settings.tres" id="4_l8qg2"]
+[ext_resource type="LabelSettings" uid="uid://dft2d8hc78d73" path="res://service/assets/ui/prefabs/PixelFontWhite.tres" id="4_l8qg2"]
 [ext_resource type="Texture2D" uid="uid://dn5d44p2mfg11" path="res://service/assets/ui/theme/ph_bt_exit_normal.png" id="5_l8qg2"]
 [ext_resource type="Texture2D" uid="uid://eeh0uxnd7r6" path="res://service/assets/ui/theme/ph_bt_exit_pressed.png" id="6_ubu54"]
 [ext_resource type="Texture2D" uid="uid://biefvw2en2v6b" path="res://service/assets/ui/theme/ph_bt_exit_hover.png" id="7_r1g2p"]
 
 [node name="MapCard" type="Control" unique_id=1226306134]
-custom_minimum_size = Vector2(102, 65)
+custom_minimum_size = Vector2(232, 192)
 layout_mode = 3
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-grow_horizontal = 2
-grow_vertical = 2
+anchors_preset = 0
+offset_right = 232.0
+offset_bottom = 190.0
 script = ExtResource("1_gv058")
 
 [node name="PanelContainer" type="PanelContainer" parent="." unique_id=686568067]

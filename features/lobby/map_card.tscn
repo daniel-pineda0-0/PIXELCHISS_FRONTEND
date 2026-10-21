@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dlt1rrw34130w"]
 
-[ext_resource type="Script" uid="uid://jdul2ip0qjck" path="res://map_card.gd" id="1_gv058"]
+[ext_resource type="Script" uid="uid://jdul2ip0qjck" path="res://features/lobby/map_card.gd" id="1_gv058"]
 [ext_resource type="Texture2D" uid="uid://xcoijr2mc1oy" path="res://service/assets/ui/icons/ph_map_card_minimap_1.png" id="2_w8oua"]
 [ext_resource type="Texture2D" uid="uid://bd1qaf01sstdf" path="res://service/assets/ui/icons/ph_map_card_user_icon.png" id="3_ovhd4"]
 [ext_resource type="LabelSettings" uid="uid://dft2d8hc78d73" path="res://service/assets/ui/prefabs/PixelFontWhite.tres" id="4_l8qg2"]

@@ -7,3 +7,5 @@ offset_right = 8.0
 offset_bottom = 8.0
 text = "Kick"
 script = ExtResource("1_36qgy")
+
+[connection signal="pressed" from="." to="." method="_on_pressed"]

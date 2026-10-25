@@ -49,6 +49,7 @@ size_flags_vertical = 0
 theme_override_constants/separation = 8
 
 [node name="ExitButton" type="TextureButton" parent="Main/LeftArea/VBoxContainer" unique_id=2032148240]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 0
 texture_normal = ExtResource("1_233tq")
@@ -135,6 +136,7 @@ layout_mode = 2
 theme_override_constants/margin_top = 8
 
 [node name="ReadyButton" type="TextureButton" parent="Main/CenterArea/VBoxContainer/ReadyButtonContainer" unique_id=1191759384]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0

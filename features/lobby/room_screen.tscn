@@ -111,8 +111,10 @@ text = "Codigo"
 label_settings = ExtResource("10_x01b4")
 horizontal_alignment = 1
 
-[node name="JoinButton" parent="Main/CenterArea/VBoxContainer/CodeContainer" unique_id=911363883 instance=ExtResource("7_77033")]
+[node name="CopyButton" parent="Main/CenterArea/VBoxContainer/CodeContainer" unique_id=911363883 instance=ExtResource("7_77033")]
+unique_name_in_owner = true
 layout_mode = 2
+size_flags_vertical = 4
 
 [node name="MiniMaps" type="PanelContainer" parent="Main/CenterArea/VBoxContainer" unique_id=1741212352]
 layout_mode = 2
@@ -131,6 +133,24 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="MapInfo" type="VBoxContainer" parent="Main/CenterArea/VBoxContainer" unique_id=1782340031]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="LeaderLabel" type="Label" parent="Main/CenterArea/VBoxContainer/MapInfo" unique_id=1782340032]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Mapa: al azar"
+label_settings = ExtResource("10_x01b4")
+horizontal_alignment = 1
+
+[node name="PreviewLabel" type="Label" parent="Main/CenterArea/VBoxContainer/MapInfo" unique_id=1782340033]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(464, 0)
+layout_mode = 2
+label_settings = ExtResource("10_x01b4")
+autowrap_mode = 3
+
 [node name="ReadyButtonContainer" type="MarginContainer" parent="Main/CenterArea/VBoxContainer" unique_id=897609494]
 layout_mode = 2
 theme_override_constants/margin_top = 8
@@ -144,5 +164,28 @@ texture_normal = ExtResource("6_du8pq")
 texture_pressed = ExtResource("7_rjadh")
 texture_hover = ExtResource("8_x01b4")
 
+[node name="StartButton" parent="Main/CenterArea/VBoxContainer/ReadyButtonContainer" unique_id=1782340034 instance=ExtResource("7_77033")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+
+[node name="StatusLabel" type="Label" parent="." unique_id=1782340035]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -14.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 0
+label_settings = ExtResource("10_x01b4")
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [connection signal="pressed" from="Main/LeftArea/VBoxContainer/ExitButton" to="." method="_on_exit_button_pressed"]
 [connection signal="pressed" from="Main/CenterArea/VBoxContainer/ReadyButtonContainer/ReadyButton" to="." method="_on_ready_button_pressed"]
+[connection signal="pressed" from="Main/CenterArea/VBoxContainer/ReadyButtonContainer/StartButton" to="." method="_on_start_button_pressed"]
+[connection signal="pressed" from="Main/CenterArea/VBoxContainer/CodeContainer/CopyButton" to="." method="_on_copy_button_pressed"]

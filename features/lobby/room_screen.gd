@@ -11,13 +11,13 @@ const READY_COLOR := Color(0.6, 1.0, 0.6)
 @onready var map_cards: Array = [%MapCard, %MapCard2]
 
 @onready var room_code_label:Label=%RoomCodeLabel
-#@onready var copy_button = %CopyButton          # JoinButton (tiene set_text)
+@onready var copy_button = %CopyButton          # JoinButton (tiene set_text)
 @onready var exit_button:TextureButton=%ExitButton
 @onready var ready_button:TextureButton=%ReadyButton
 @onready var start_button = %StartButton        # JoinButton (tiene set_text)
-#@onready var leader_label: Label = %LeaderLabel
-#@onready var preview_label: Label = %PreviewLabel
-#@onready var status_label: Label = %StatusLabel
+@onready var leader_label: Label = %LeaderLabel
+@onready var preview_label: Label = %PreviewLabel
+@onready var status_label: Label = %StatusLabel
 
 var _map_ids: Array[String] = []   # map_ids[i] es el mapa de map_cards[i]
 var _selected_map := ""            # mapa en vista previa (US-012 esc. 5)
@@ -31,7 +31,7 @@ func _ready() -> void:
 		return
 	_status_timer.one_shot = true
 	_status_timer.wait_time = STATUS_TIME
-#	_status_timer.timeout.connect(func(): status_label.text = "")
+	_status_timer.timeout.connect(func(): status_label.text = "")
 	add_child(_status_timer)
 
 	Lobby.changed.connect(_on_lobby_changed)
@@ -46,7 +46,7 @@ func _ready() -> void:
 		card.selected.connect(_on_map_selected)
 		card.vote_pressed.connect(_on_vote_pressed)
 		card.visible = false
-	#copy_button.set_text("Copy")
+	copy_button.set_text("Copy")
 	start_button.set_text("Start")
 
 	room_code_label.text = Lobby.data.code

@@ -1,11 +1,13 @@
 [gd_scene format=3 uid="uid://42lrr6godspd"]
 
+[ext_resource type="FontFile" uid="uid://bbbnsoretj02p" path="res://service/assets/ui/theme/PressStart2P.ttf" id="2_font"]
 [ext_resource type="Script" uid="uid://c1g3o8anfqeqm" path="res://features/lobby/kick_player.gd" id="1_36qgy"]
 
 [node name="KickButton" type="Button" unique_id=1493822583]
 offset_right = 8.0
 offset_bottom = 8.0
 text = "Kick"
+focus_mode = 0
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 8
 script = ExtResource("1_36qgy")
-
-[connection signal="pressed" from="." to="." method="_on_pressed"]

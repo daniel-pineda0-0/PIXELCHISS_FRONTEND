@@ -57,5 +57,3 @@ size_flags_horizontal = 4
 texture_normal = ExtResource("5_l8qg2")
 texture_pressed = ExtResource("6_ubu54")
 texture_hover = ExtResource("7_r1g2p")
-
-[connection signal="focus_entered" from="PanelContainer" to="." method="_on_panel_container_focus_entered"]

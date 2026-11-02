@@ -1,0 +1,81 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://features/lobby/menu_screen.gd" id="1_menu"]
+[ext_resource type="PackedScene" uid="uid://cxlqyhuuejla7" path="res://features/lobby/join_button.tscn" id="2_join"]
+[ext_resource type="LabelSettings" uid="uid://dft2d8hc78d73" path="res://service/assets/ui/prefabs/PixelFontWhite.tres" id="3_font"]
+[ext_resource type="FontFile" uid="uid://bbbnsoretj02p" path="res://service/assets/ui/theme/PressStart2P.ttf" id="4_ttf"]
+
+[node name="MenuScreen" type="Control" unique_id=1782340100]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu")
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1782340101]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="CenterContainer" unique_id=1782340102]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/PanelContainer" unique_id=1782340103]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer" unique_id=1782340104]
+layout_mode = 2
+text = "PixelChiss"
+label_settings = ExtResource("3_font")
+horizontal_alignment = 1
+
+[node name="CreateButton" parent="CenterContainer/PanelContainer/VBoxContainer" unique_id=1782340105 instance=ExtResource("2_join")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="OrLabel" type="Label" parent="CenterContainer/PanelContainer/VBoxContainer" unique_id=1782340106]
+layout_mode = 2
+text = "o unete con un codigo"
+label_settings = ExtResource("3_font")
+horizontal_alignment = 1
+
+[node name="CodeInput" type="LineEdit" parent="CenterContainer/PanelContainer/VBoxContainer" unique_id=1782340107]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_fonts/font = ExtResource("4_ttf")
+theme_override_font_sizes/font_size = 8
+placeholder_text = "CODIGO"
+alignment = 1
+max_length = 6
+
+[node name="JoinButton" parent="CenterContainer/PanelContainer/VBoxContainer" unique_id=1782340108 instance=ExtResource("2_join")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="StatusLabel" type="Label" parent="." unique_id=1782340109]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -14.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 0
+label_settings = ExtResource("3_font")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[connection signal="pressed" from="CenterContainer/PanelContainer/VBoxContainer/CreateButton" to="." method="_on_create_button_pressed"]
+[connection signal="pressed" from="CenterContainer/PanelContainer/VBoxContainer/JoinButton" to="." method="_on_join_button_pressed"]

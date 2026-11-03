@@ -186,6 +186,6 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [connection signal="pressed" from="Main/LeftArea/VBoxContainer/ExitButton" to="." method="_on_exit_button_pressed"]
+[connection signal="pressed" from="Main/CenterArea/VBoxContainer/CodeContainer/CopyButton" to="." method="_on_copy_button_pressed"]
 [connection signal="pressed" from="Main/CenterArea/VBoxContainer/ReadyButtonContainer/ReadyButton" to="." method="_on_ready_button_pressed"]
 [connection signal="pressed" from="Main/CenterArea/VBoxContainer/ReadyButtonContainer/StartButton" to="." method="_on_start_button_pressed"]
-[connection signal="pressed" from="Main/CenterArea/VBoxContainer/CodeContainer/CopyButton" to="." method="_on_copy_button_pressed"]

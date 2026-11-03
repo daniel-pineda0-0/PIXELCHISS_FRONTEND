@@ -19,7 +19,7 @@ func _ready() -> void:
 func _on_create_button_pressed() -> void:
 	_set_busy(true)
 	status_label.text = "Creando sala..."
-	var result := await Lobby.create()
+	var result :Dictionary= await Lobby.create()
 	_after_enter(result)
 
 func _on_join_button_pressed() -> void:
@@ -29,7 +29,7 @@ func _on_join_button_pressed() -> void:
 		return
 	_set_busy(true)
 	status_label.text = "Entrando a la sala..."
-	var result := await Lobby.join(code)
+	var result :Dictionary= await Lobby.join(code)
 	_after_enter(result)
 
 func _after_enter(result: Dictionary) -> void:

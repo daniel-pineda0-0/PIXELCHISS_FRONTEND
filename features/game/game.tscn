@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://ctflo58uhwpra"]
+
+[ext_resource type="Script" uid="uid://c4hiwhg7qj2ct" path="res://features/game/game.gd" id="1_1j583"]
+[ext_resource type="PackedScene" uid="uid://c38is0wvg5vmn" path="res://features/game/game_ui.tscn" id="1_v3hai"]
+
+[node name="Game" type="Node2D" unique_id=7672585]
+script = ExtResource("1_1j583")
+
+[node name="GameUI" parent="." unique_id=639558418 instance=ExtResource("1_v3hai")]
+
+[node name="World" type="Node2D" parent="." unique_id=207462111]
+
+[node name="Parallax2D_back" type="Parallax2D" parent="World" unique_id=1821492477]
+
+[node name="Parallax2D_mid" type="Parallax2D" parent="World" unique_id=2110199974]
+
+[node name="Parallax2D_front" type="Parallax2D" parent="World" unique_id=158038130]
+
+[node name="level" type="Node2D" parent="World" unique_id=559448576]
+
+[node name="ground" type="TileMapLayer" parent="World/level" unique_id=409249106]
+
+[node name="Camera2D" type="Camera2D" parent="World" unique_id=689359133]

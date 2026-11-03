@@ -27,7 +27,7 @@ var _status_timer := Timer.new()
 
 func _ready() -> void:
 	if not Lobby.in_lobby():
-		_go_menu()
+		call_deferred("_go_menu")
 		return
 	_status_timer.one_shot = true
 	_status_timer.wait_time = STATUS_TIME
@@ -68,7 +68,7 @@ func _refresh() -> void:
 		return
 	var players: Array = Lobby.data.players
 	var open: bool = Lobby.data.status == Lobby.STATUS_WAITING
-	var can_manage := Lobby.is_host() and open
+	var can_manage :bool= Lobby.is_host() and open
 	for i in player_cards.size():
 		if i < players.size():
 			var is_me: bool = players[i].user_id == Lobby.my_id()
@@ -113,7 +113,7 @@ func _refresh_maps() -> void:
 		map_cards[i].set_votes(int(votes.get(map_id, 0)))
 		map_cards[i].set_voted(map_id == Lobby.my_vote())
 		map_cards[i].set_selected(map_id == _selected_map)
-	var leader := Lobby.leading_map_id()
+	var leader:String= Lobby.leading_map_id()
 	leader_label.text = "Mapa: %s" % (_map_name(leader) if leader != "" else "al azar")
 	preview_label.text = _preview_text(_selected_map)
 
@@ -148,7 +148,7 @@ func _announce_changes() -> void:
 		if not current.has(id):
 			_show_status("%s salio de la sala" % _known_names[id])
 	_known_names = current
-	var host := Lobby.is_host()
+	var host :bool= Lobby.is_host()
 	if host and not _was_host:
 		_show_status("Ahora eres el anfitrion")
 	_was_host = host
@@ -188,7 +188,7 @@ func _on_ready_button_pressed() -> void:
 
 func _on_start_button_pressed() -> void:
 	start_button.disabled = true
-	var result := await Lobby.start()
+	var result :Dictionary = await Lobby.start()
 	if result.ok:
 		return
 	_show_status(result.error)

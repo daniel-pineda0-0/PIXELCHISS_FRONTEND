@@ -1,0 +1,69 @@
+[gd_scene format=3 uid="uid://c38is0wvg5vmn"]
+
+[ext_resource type="Script" uid="uid://bn24uubh4qxut" path="res://features/game/game_ui.gd" id="1_mvj5b"]
+[ext_resource type="PackedScene" uid="uid://b1pnp7ocd4y5" path="res://features/game/game_pice.tscn" id="2_7rcnj"]
+[ext_resource type="PackedScene" uid="uid://dxv2es6l706c8" path="res://features/game/player_card_game.tscn" id="3_hukp0"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6chcw"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_g3kas"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_0onpb"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_vs606"]
+
+[node name="GameUI" type="CanvasLayer" unique_id=639558418]
+script = ExtResource("1_mvj5b")
+
+[node name="GameHUD" type="Control" parent="." unique_id=1461501867]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="GameHUD" unique_id=18949452]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="MiniMap" type="PanelContainer" parent="GameHUD/MarginContainer" unique_id=361813416]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+
+[node name="AspectRatioContainer" type="AspectRatioContainer" parent="GameHUD/MarginContainer/MiniMap" unique_id=1227834532]
+layout_mode = 2
+
+[node name="TileMapLayer" type="TileMapLayer" parent="GameHUD/MarginContainer/MiniMap/AspectRatioContainer" unique_id=1511033763]
+
+[node name="GamePice" parent="GameHUD/MarginContainer/MiniMap/AspectRatioContainer" unique_id=189274474 instance=ExtResource("2_7rcnj")]
+
+[node name="Dices" type="PanelContainer" parent="GameHUD/MarginContainer" unique_id=200149975]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 8
+
+[node name="Dice" type="AnimatedSprite2D" parent="GameHUD/MarginContainer/Dices" unique_id=1924480191]
+
+[node name="PlayerButton" type="Button" parent="GameHUD/MarginContainer/Dices" unique_id=539003966]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_6chcw")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_g3kas")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_0onpb")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_vs606")
+
+[node name="Players" type="PanelContainer" parent="GameHUD/MarginContainer" unique_id=1394126077]
+layout_mode = 2
+size_flags_horizontal = 8
+
+[node name="Control" parent="GameHUD/MarginContainer/Players" unique_id=939403117 instance=ExtResource("3_hukp0")]
+layout_mode = 2

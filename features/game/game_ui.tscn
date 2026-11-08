@@ -52,7 +52,10 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 8
 
-[node name="Dice" type="AnimatedSprite2D" parent="GameHUD/MarginContainer/Dices" unique_id=1924480191]
+[node name="AspectRatioContainer" type="AspectRatioContainer" parent="GameHUD/MarginContainer/Dices" unique_id=1336726651]
+layout_mode = 2
+
+[node name="Dice" type="AnimatedSprite2D" parent="GameHUD/MarginContainer/Dices/AspectRatioContainer" unique_id=1924480191]
 
 [node name="PlayerButton" type="Button" parent="GameHUD/MarginContainer/Dices" unique_id=539003966]
 layout_mode = 2

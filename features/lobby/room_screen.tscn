@@ -11,6 +11,7 @@
 [ext_resource type="Texture2D" uid="uid://bo0qx431uolfb" path="res://service/assets/ui/theme/ph_bt_ready_pressed.png" id="7_rjadh"]
 [ext_resource type="Texture2D" uid="uid://b3edpxlp0ri18" path="res://service/assets/ui/theme/ph_bt_ready_hover.png" id="8_x01b4"]
 [ext_resource type="LabelSettings" uid="uid://dft2d8hc78d73" path="res://service/assets/ui/prefabs/PixelFontWhite.tres" id="10_x01b4"]
+[ext_resource type="PackedScene" path="res://features/settings/settings_button.tscn" id="11_settings"]
 
 [node name="RoomScreen" type="Control" unique_id=1294898189]
 layout_mode = 3
@@ -184,6 +185,8 @@ grow_vertical = 0
 label_settings = ExtResource("10_x01b4")
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="SettingsButton" parent="." instance=ExtResource("11_settings")]
 
 [connection signal="pressed" from="Main/LeftArea/VBoxContainer/ExitButton" to="." method="_on_exit_button_pressed"]
 [connection signal="pressed" from="Main/CenterArea/VBoxContainer/CodeContainer/CopyButton" to="." method="_on_copy_button_pressed"]

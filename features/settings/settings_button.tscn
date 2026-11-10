@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://features/settings/settings_button.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://cxlqyhuuejla7" path="res://features/lobby/join_button.tscn" id="2_join"]
+
+[node name="SettingsButton" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_script")
+
+[node name="Margin" type="MarginContainer" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -64.0
+offset_bottom = 48.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+
+[node name="OpenButton" parent="Margin" instance=ExtResource("2_join")]
+unique_name_in_owner = true
+layout_mode = 2

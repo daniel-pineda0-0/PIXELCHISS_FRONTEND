@@ -6,6 +6,9 @@ extends Control
 
 var _login: GoogleLogin
 
+func _ready() -> void:
+	Music.play(&"login")
+
 func _on_button_pressed() -> void:
 	btn.disabled = true
 	status.text = "Esperando el inicio de sesión en el navegador…"

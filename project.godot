@@ -23,6 +23,7 @@ Session="*uid://dv5wncbn41mux"
 GameState="*uid://byqcjnesry01l"
 Lobby="*uid://b6j7oufb2jiv"
 Settings="*uid://4c58giop4tul"
+Music="*res://autoloads/music.gd"
 
 [display]
 
@@ -40,3 +41,5 @@ window/stretch/mode="canvas_items"
 
 textures/canvas_textures/default_texture_filter=0
 rendering_device/driver.windows="d3d12"
+2d/snap/snap_2d_transforms_to_pixel=true
+2d/snap/snap_2d_vertices_to_pixel=true

@@ -1,6 +1,57 @@
 [gd_scene format=3 uid="uid://cwhm7u1lyap1h"]
 
 [ext_resource type="Script" uid="uid://bgxyhae60ijj6" path="res://features/auth/login.gd" id="1_fca7o"]
+[ext_resource type="PackedScene" path="res://features/auth/login_background.tscn" id="2_bg"]
+[ext_resource type="FontFile" uid="uid://bbbnsoretj02p" path="res://service/assets/ui/theme/PressStart2P.ttf" id="3_font"]
+
+[sub_resource type="StyleBoxFlat" id="Panel_stone"]
+bg_color = Color(0.0824, 0.0941, 0.1216, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0.3529, 0.3529, 0.3529, 1)
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+anti_aliasing = false
+
+[sub_resource type="StyleBoxFlat" id="Btn_normal"]
+bg_color = Color(0.4314, 0.4314, 0.4314, 1)
+border_width_bottom = 2
+border_color = Color(0.1843, 0.2314, 0.3216, 1)
+content_margin_left = 8.0
+content_margin_top = 6.0
+content_margin_right = 8.0
+content_margin_bottom = 6.0
+anti_aliasing = false
+
+[sub_resource type="StyleBoxFlat" id="Btn_hover"]
+bg_color = Color(0.5412, 0.5412, 0.5412, 1)
+border_width_bottom = 2
+border_color = Color(0.1843, 0.2314, 0.3216, 1)
+content_margin_left = 8.0
+content_margin_top = 6.0
+content_margin_right = 8.0
+content_margin_bottom = 6.0
+anti_aliasing = false
+
+[sub_resource type="StyleBoxFlat" id="Btn_pressed"]
+bg_color = Color(0.3137, 0.3137, 0.3137, 1)
+content_margin_left = 8.0
+content_margin_top = 7.0
+content_margin_right = 8.0
+content_margin_bottom = 5.0
+anti_aliasing = false
+
+[sub_resource type="StyleBoxFlat" id="Btn_disabled"]
+bg_color = Color(0.35, 0.35, 0.35, 1)
+content_margin_left = 8.0
+content_margin_top = 6.0
+content_margin_right = 8.0
+content_margin_bottom = 6.0
+anti_aliasing = false
 
 [node name="LogginScreen" type="Control" unique_id=914018813]
 layout_mode = 3
@@ -12,40 +63,68 @@ grow_vertical = 2
 script = ExtResource("1_fca7o")
 metadata/_edit_use_anchors_ = true
 
+[node name="LoginBackground" parent="." instance=ExtResource("2_bg")]
+
 [node name="PanelContainer" type="PanelContainer" parent="." unique_id=532068918]
+custom_minimum_size = Vector2(240, 136)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -43.5
-offset_top = -20.0
-offset_right = 43.5
-offset_bottom = 20.0
+offset_left = -120.0
+offset_top = -68.0
+offset_right = 120.0
+offset_bottom = 68.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("Panel_stone")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer" unique_id=1130806703]
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 0
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_constants/separation = 8
 
 [node name="label2" type="Label" parent="PanelContainer/VBoxContainer" unique_id=1164030549]
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 33
-text = "Iniciar sesión"
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 16
+text = "Pixel Chiss"
 
 [node name="label" type="Label" parent="PanelContainer/VBoxContainer" unique_id=1789541640]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(216, 0)
 layout_mode = 2
 size_flags_horizontal = 4
-text = "Bienvenido, dale ingresar para continuar"
+theme_override_colors/font_color = Color(0.6039, 0.6039, 0.6039, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 8
+text = "Ingresa para continuar"
+horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="Button" type="Button" parent="PanelContainer/VBoxContainer" unique_id=133358237]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 24)
 layout_mode = 2
+size_flags_horizontal = 4
+focus_mode = 0
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(1, 1, 1, 1)
+theme_override_colors/font_disabled_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 8
+theme_override_styles/normal = SubResource("Btn_normal")
+theme_override_styles/hover = SubResource("Btn_hover")
+theme_override_styles/pressed = SubResource("Btn_pressed")
+theme_override_styles/disabled = SubResource("Btn_disabled")
 text = "Ingresar"
 
 [connection signal="pressed" from="PanelContainer/VBoxContainer/Button" to="." method="_on_button_pressed"]

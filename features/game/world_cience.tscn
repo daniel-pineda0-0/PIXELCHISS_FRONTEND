@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://d1b5hb7urtepc"]
+
+[node name="WorldCience" type="Node2D" unique_id=1968728586]
+
+[node name="Parallax2D_back" type="Parallax2D" parent="." unique_id=1287994153]
+
+[node name="Parallax2D_mid" type="Parallax2D" parent="." unique_id=998952433]
+
+[node name="Parallax2D_front" type="Parallax2D" parent="." unique_id=320130683]
+
+[node name="level" type="Node2D" parent="." unique_id=1418348868]
+
+[node name="ground" type="TileMapLayer" parent="level" unique_id=1804345327]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1228748300]

@@ -28,6 +28,7 @@ func set_state(new_state: State) -> void:
 
 func resolve_next_scene() -> String:
 	if state == State.BOOT:
+		#Session.logout()
 		var logged: bool = Session.is_logged_in() or await Session.try_restore()
 		if not logged:
 			return LOGIN_SCENE    

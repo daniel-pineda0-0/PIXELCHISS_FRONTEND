@@ -5,6 +5,7 @@
 [ext_resource type="LabelSettings" uid="uid://dft2d8hc78d73" path="res://service/assets/ui/prefabs/PixelFontWhite.tres" id="3_font"]
 [ext_resource type="FontFile" uid="uid://bbbnsoretj02p" path="res://service/assets/ui/theme/PressStart2P.ttf" id="4_ttf"]
 [ext_resource type="PackedScene" path="res://features/settings/settings_button.tscn" id="5_settings"]
+[ext_resource type="PackedScene" path="res://features/lobby/menu_background.tscn" id="6_bg"]
 
 [node name="MenuScreen" type="Control" unique_id=1782340100]
 layout_mode = 3
@@ -14,6 +15,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_menu")
+
+[node name="MenuBackground" parent="." instance=ExtResource("6_bg")]
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=1782340101]
 layout_mode = 1

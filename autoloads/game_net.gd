@@ -540,7 +540,9 @@ func _now() -> float:
 
 ## JSON entrega todos los números como float y el servidor espera enteros.
 func _int_or_null(v: Variant) -> Variant:
-	return null if v == null else int(v)
+	if v == null:
+		return null
+	return int(v)
 
 func _dict(d: Dictionary, key: String) -> Dictionary:
 	var v: Variant = d.get(key)

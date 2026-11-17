@@ -1,5 +1,8 @@
 [gd_scene format=3 uid="uid://b1pnp7ocd4y5"]
 
+[ext_resource type="Texture2D" uid="uid://nxbo2r1pj8kb" path="res://service/assets/ui/icons/ph_pice_minimap.png" id="1_dcd4d"]
+
 [node name="GamePice" type="Node2D" unique_id=189274474]
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=153046294]
+texture = ExtResource("1_dcd4d")

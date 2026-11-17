@@ -1,0 +1,113 @@
+[gd_scene format=3 uid="uid://cpvu08xupmhro"]
+
+[ext_resource type="Texture2D" uid="uid://bc65imj35ywsi" path="res://service/assets/ui/icons/dice_sprites.png" id="1_73yrg"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_73yrg"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xkeyj"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_d7mmv"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_bfldc"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8xue2"]
+atlas = ExtResource("1_73yrg")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5r4yt"]
+atlas = ExtResource("1_73yrg")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_154ks"]
+atlas = ExtResource("1_73yrg")
+region = Rect2(32, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_100un"]
+atlas = ExtResource("1_73yrg")
+region = Rect2(48, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_y75a2"]
+atlas = ExtResource("1_73yrg")
+region = Rect2(64, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i6wgy"]
+atlas = ExtResource("1_73yrg")
+region = Rect2(80, 0, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_xkeyj"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8xue2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5r4yt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_154ks")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_100un")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_y75a2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_i6wgy")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="DiceSelector" type="Control" unique_id=1871614941]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=1595889123]
+layout_mode = 1
+offset_right = 20.0
+offset_bottom = 10.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer" unique_id=1159210697]
+layout_mode = 2
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="PlayerButton" type="Button" parent="PanelContainer/HBoxContainer" unique_id=461295299]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_73yrg")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_xkeyj")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_d7mmv")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_bfldc")
+
+[node name="PlayerButton2" type="Button" parent="PanelContainer/HBoxContainer" unique_id=123696079]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_styles/normal = SubResource("StyleBoxEmpty_73yrg")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_xkeyj")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_d7mmv")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_bfldc")
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer" unique_id=1219405067]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 10
+
+[node name="AspectRatioContainer" type="AspectRatioContainer" parent="PanelContainer/MarginContainer" unique_id=433239792]
+layout_mode = 2
+
+[node name="Dice" type="AnimatedSprite2D" parent="PanelContainer/MarginContainer/AspectRatioContainer" unique_id=1541286655]
+position = Vector2(-10, 0)
+sprite_frames = SubResource("SpriteFrames_xkeyj")
+
+[node name="Dice2" type="AnimatedSprite2D" parent="PanelContainer/MarginContainer/AspectRatioContainer" unique_id=518544518]
+position = Vector2(10, 0)
+sprite_frames = SubResource("SpriteFrames_xkeyj")

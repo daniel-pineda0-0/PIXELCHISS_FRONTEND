@@ -13,6 +13,7 @@
 [ext_resource type="Texture2D" path="res://service/assets/backgrounds/menu/cloud_3.png" id="t_cloud_3"]
 [ext_resource type="Texture2D" path="res://service/assets/backgrounds/menu/cloud_4.png" id="t_cloud_4"]
 [ext_resource type="Texture2D" path="res://service/assets/backgrounds/menu/dust.png" id="t_dust"]
+[ext_resource type="Texture2D" path="res://service/assets/backgrounds/menu/moon.png" id="t_moon"]
 [ext_resource type="Texture2D" path="res://service/assets/backgrounds/menu/rock.png" id="t_rock"]
 [ext_resource type="Script" path="res://features/lobby/menu_background.gd" id="s_bg"]
 
@@ -73,6 +74,11 @@ modulate = Color(1, 1, 1, 0.8)
 position = Vector2(470, 54)
 texture = ExtResource("t_cloud_4")
 centered = false
+
+[node name="Moon" type="Sprite2D" parent="World"]
+modulate = Color(1, 0.4, 0.36, 1)
+position = Vector2(528, 56)
+texture = ExtResource("t_moon")
 
 [node name="CastleGroup" type="Node2D" parent="World"]
 

@@ -24,6 +24,7 @@ GameState="*uid://byqcjnesry01l"
 Lobby="*uid://b6j7oufb2jiv"
 Settings="*uid://4c58giop4tul"
 Music="*res://autoloads/music.gd"
+Sfx="*uid://ctlh5maydip53"
 
 [display]
 

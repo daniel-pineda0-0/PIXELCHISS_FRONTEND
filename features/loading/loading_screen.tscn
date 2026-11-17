@@ -1,8 +1,51 @@
 [gd_scene format=3 uid="uid://ghduxfycgf7"]
 
 [ext_resource type="Script" uid="uid://bqvcplpn0e2uu" path="res://features/loading/loading_screen.gd" id="1_0g1l4"]
+[ext_resource type="PackedScene" path="res://features/loading/loading_background.tscn" id="2_bg"]
+[ext_resource type="FontFile" uid="uid://bbbnsoretj02p" path="res://service/assets/ui/theme/PressStart2P.ttf" id="3_font"]
+[ext_resource type="Texture2D" path="res://service/assets/ui/loading/bar_frame.png" id="4_frame"]
+[ext_resource type="Texture2D" path="res://service/assets/ui/loading/bar_rock.png" id="5_rock"]
+[ext_resource type="Texture2D" path="res://service/assets/ui/loading/bar_lava.png" id="6_lava"]
+[ext_resource type="Texture2D" path="res://service/assets/ui/loading/bar_edge.png" id="7_edge"]
+[ext_resource type="Texture2D" path="res://service/assets/ui/loading/runner.png" id="8_runner"]
 
-[node name="LoadingScreen" type="Control" unique_id=436969487]
+[sub_resource type="AtlasTexture" id="Run_0"]
+atlas = ExtResource("8_runner")
+region = Rect2(0, 0, 41, 48)
+
+[sub_resource type="AtlasTexture" id="Run_1"]
+atlas = ExtResource("8_runner")
+region = Rect2(41, 0, 41, 48)
+
+[sub_resource type="AtlasTexture" id="Run_2"]
+atlas = ExtResource("8_runner")
+region = Rect2(82, 0, 41, 48)
+
+[sub_resource type="AtlasTexture" id="Run_3"]
+atlas = ExtResource("8_runner")
+region = Rect2(123, 0, 41, 48)
+
+[sub_resource type="SpriteFrames" id="RunFrames"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("Run_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("Run_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("Run_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("Run_3")
+}],
+"loop": true,
+"name": &"run",
+"speed": 8.0
+}]
+
+[node name="LoadingScreen" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -11,17 +54,78 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_0g1l4")
 
-[node name="Label" type="Label" parent="." unique_id=472295036]
+[node name="LoadingBackground" parent="." instance=ExtResource("2_bg")]
+
+[node name="Bar" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 176.0
+offset_top = 148.0
+offset_right = 463.0
+offset_bottom = 213.0
+mouse_filter = 2
+
+[node name="Rock" type="TextureRect" parent="Bar"]
+layout_mode = 0
+offset_left = 35.0
+offset_top = 22.0
+offset_right = 252.0
+offset_bottom = 40.0
+mouse_filter = 2
+texture = ExtResource("5_rock")
+
+[node name="LavaClip" type="Control" parent="Bar"]
+clip_contents = true
+layout_mode = 0
+offset_left = 35.0
+offset_top = 22.0
+offset_right = 35.0
+offset_bottom = 40.0
+mouse_filter = 2
+
+[node name="LavaStrip" type="TextureRect" parent="Bar/LavaClip"]
+layout_mode = 0
+offset_right = 501.0
+offset_bottom = 18.0
+mouse_filter = 2
+texture = ExtResource("6_lava")
+
+[node name="Edge" type="TextureRect" parent="Bar"]
+visible = false
+layout_mode = 0
+offset_left = 32.0
+offset_top = 22.0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+texture = ExtResource("7_edge")
+
+[node name="Frame" type="TextureRect" parent="Bar"]
+layout_mode = 0
+offset_right = 287.0
+offset_bottom = 65.0
+mouse_filter = 2
+texture = ExtResource("4_frame")
+
+[node name="Runner" type="AnimatedSprite2D" parent="."]
+position = Vector2(211, 163)
+sprite_frames = SubResource("RunFrames")
+animation = &"run"
+offset = Vector2(0, -24)
+
+[node name="Label" type="Label" parent="."]
 layout_mode = 1
-anchors_preset = 8
+anchors_preset = 5
 anchor_left = 0.5
-anchor_top = 0.5
 anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -44.0
-offset_top = -11.5
-offset_right = 44.0
-offset_bottom = 11.5
+offset_left = -60.0
+offset_top = 217.0
+offset_right = 60.0
+offset_bottom = 229.0
 grow_horizontal = 2
-grow_vertical = 2
-text = "Cargando..."
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 8
+text = "CARGANDO   "
+horizontal_alignment = 1

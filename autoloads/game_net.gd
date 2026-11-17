@@ -49,6 +49,7 @@ const FATAL_TEXT := {
 	"PLAYER_RETIRED": "Fuiste retirado de la partida",
 	"GAME_NOT_FOUND": "La partida ya no existe",
 	"INVALID_GAME_ID": "Partida no válida",
+	"UNSUPPORTED_BOARD_LAYOUT": "Esta partida es de una versión anterior del tablero. Crea una nueva",
 	"CONNECTION_LOST": "Se perdió la conexión con el servidor",
 }
 

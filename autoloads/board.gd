@@ -2,20 +2,25 @@ extends Node
 ## Tablero de la partida, tal como lo define el servidor (GET /api/game/board).
 ## Se pide una sola vez y se guarda: no cambia durante la partida.
 ##
-## Nada de la geometría está escrito aquí a propósito (nº de casillas, seguros,
-## trivia, rutas): el servidor puede cambiar el tablero (p. ej. de 96 a 100
-## casillas) y el cliente lo sigue sin tocar código. Para saber dónde dibujar
-## una ficha se usa siempre `cell_at_progress`, nunca una fórmula local.
+## Los seguros, la trivia y las rutas se leen del servidor, no se escriben aquí.
+## Para saber en qué casilla está una ficha se usa siempre `cell_at_progress`,
+## nunca una fórmula local. Lo único fijo es la versión de tablero que el
+## cliente sabe dibujar (EXPECTED_*): si el servidor cambia de layout, el mapa
+## de coordenadas de Godot hay que rehacerlo y aquí se avisa en vez de pintar mal.
 
 signal finished(ok: bool)
 
-const KIND_TRACK := "TRACK"              # recorrido común
-const KIND_EXIT := "EXIT"                # salida de cada ficha
-const KIND_FINISH_LANE := "FINISH_LANE"  # corredor hacia la meta
-const KIND_CROWN := "CROWN"              # meta / corona
+const EXPECTED_LAYOUT := "v3-100"
+const EXPECTED_CELLS := 100
+
+const KIND_TRACK := "TRACK"              # recorrido común (0-67)
+const KIND_FINISH_LANE := "FINISH_LANE"  # corredor final privado (68-99)
+const KIND_CROWN := "CROWN"              # corona, última casilla de cada corredor
+# Las casas no son casillas: una ficha HOME tiene position null y progress -1.
 
 var is_loaded := false
-var layout := ""                 # versión del tablero, p. ej. "v1"
+var load_error := ""             # motivo legible si ensure_loaded() devolvió false
+var layout := ""                 # versión del tablero, p. ej. "v3-100"
 var cell_count := 0
 var track_count := 0             # casillas del recorrido común
 var cells: Array = []            # [{id, kind, safe, protectedCell, capacity}]
@@ -33,8 +38,16 @@ func ensure_loaded() -> bool:
 	if _loading:
 		return await finished
 	_loading = true
+	load_error = ""
 	var r: Dictionary = await Api.request(HTTPClient.METHOD_GET, "/api/game/board")
 	var ok: bool = r.ok and r.data is Dictionary and _parse(r.data)
+	if ok and not _is_supported():
+		ok = false
+		load_error = "El servidor usa otro tablero (%s, %d casillas); esta versión del juego espera %s" % [
+				layout, cell_count, EXPECTED_LAYOUT]
+		push_error("Board: " + load_error)
+	elif not ok:
+		load_error = "No se pudo cargar el tablero"
 	_loading = false
 	is_loaded = ok
 	finished.emit(ok)
@@ -68,11 +81,15 @@ func cell_at_progress(seat: int, piece_number: int, progress: int) -> int:
 		return -1
 	return path[progress]
 
-## Cuántos pasos tiene la ruta (progreso máximo = corona).
+## Progreso de la corona. La ruta tiene un id por progreso; el seguro de salida
+## aparece en el progreso 0 y otra vez en el 68 (vuelta completa).
 func last_progress(seat: int, piece_number: int) -> int:
 	return route(seat, piece_number).size() - 1
 
 # --- Interno ---
+
+func _is_supported() -> bool:
+	return layout == EXPECTED_LAYOUT and cell_count == EXPECTED_CELLS and cells.size() == EXPECTED_CELLS
 
 func _parse(d: Dictionary) -> bool:
 	if not (d.get("cells") is Array and d.get("routes") is Dictionary):

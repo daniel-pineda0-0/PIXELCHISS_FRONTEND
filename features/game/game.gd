@@ -23,7 +23,7 @@ func _ready() -> void:
 	for signal_ref in [GameNet.state_changed, GameNet.status_changed, GameNet.busy_changed]:
 		signal_ref.connect(func(_arg = null): _refresh_debug())
 	if not await Board.ensure_loaded():
-		GameState.leave_game("No se pudo cargar el tablero")
+		GameState.leave_game(Board.load_error)
 		return
 	_refresh_debug()
 	GameNet.join(GameState.game_id)

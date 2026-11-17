@@ -42,23 +42,25 @@ texture_region_size = Vector2i(32, 32)
 tile_size = Vector2i(32, 32)
 sources/2 = SubResource("TileSetAtlasSource_o1nv8")
 
-[node name="PlayerGroundCience" type="TileMap" unique_id=1598695971]
+[node name="Node2D2" type="Node2D" unique_id=1908351272]
+
+[node name="PlayerGroundCience" type="TileMap" parent="." unique_id=1598695971]
 tile_set = SubResource("TileSet_614an")
 format = 2
 layer_0/tile_data = PackedInt32Array(65535, 65538, 2, 0, 131074, 2, 1, 65538, 2, 2, 131074, 0, 65533, 65538, 2, 65534, 131074, 2, 3, 65538, 2, 4, 131074, 2, 65531, 131074, 1, 65532, 131074, 2, 5, 65538, 2, 6, 131074, 2, 65529, 65538, 2, 65530, 131074, 2, 7, 131074, 1, 65528, 131074, 2, 65527, 65538, 2, -65535, 393218, 3, -65534, 458754, 3, -131071, 393218, 2, -131070, 458754, 2, 131063, 65538, 3, 131064, 65538, 3, 131065, 65538, 3, 131066, 65538, 3, 131067, 65538, 3, 131068, 65538, 3, 131069, 65538, 3, 131070, 65538, 3, 131071, 65538, 3, 65536, 65538, 3, 65537, 65538, 3, 65538, 65538, 3, 65539, 65538, 3, 65540, 65538, 3, 65541, 65538, 3, 65542, 65538, 3, 65543, 65538, 3, 196599, 65538, 3, 196600, 65538, 3, 196601, 65538, 3, 196602, 65538, 3, 196603, 65538, 3, 196604, 65538, 3, 196605, 65538, 3, 196606, 65538, 3, 196607, 65538, 3, 131072, 65538, 3, 131073, 65538, 3, 131074, 65538, 3, 131075, 65538, 3, 131076, 65538, 3, 131077, 65538, 3, 131078, 65538, 3, 131079, 65538, 3)
 script = ExtResource("2_o1nv8")
 
-[node name="GroundPice" parent="." unique_id=1343878869 instance=ExtResource("3_mr4ot")]
+[node name="GroundPice" parent="PlayerGroundCience" unique_id=1343878869 instance=ExtResource("3_mr4ot")]
 position = Vector2(64, -1)
 
-[node name="PrisonCell" type="TileMap" parent="." unique_id=1761620274]
+[node name="PrisonCell" type="TileMap" parent="PlayerGroundCience" unique_id=1761620274]
 tile_set = SubResource("TileSet_614an")
 format = 2
 layer_0/tile_data = PackedInt32Array(-65535, 262146, 3, -65534, 327682, 3, -131071, 393218, 2, -131070, 458754, 2)
 
-[node name="ArrivalsCorridor" type="TileMap" parent="." unique_id=337386354]
+[node name="ArrivalsCorridor" type="TileMap" parent="PlayerGroundCience" unique_id=337386354]
 tile_set = SubResource("TileSet_614an")
 format = 2
 layer_0/tile_data = PackedInt32Array(65537, 65538, 1, 65538, 131074, 1, 65539, 65538, 1, 65540, 131074, 1, 65541, 65538, 1, 65542, 131074, 1, 65543, 458754, 1, 65536, 262146, 0)
 
-[node name="Node2D" type="Node2D" parent="." unique_id=57579409]
+[node name="Node2D" type="Node2D" parent="PlayerGroundCience" unique_id=57579409]

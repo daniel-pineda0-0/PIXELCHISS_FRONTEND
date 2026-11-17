@@ -6,6 +6,8 @@ extends AnimatedSprite2D
 @export var speed := 0.12                # radianes por segundo; negativo = sentido contrario
 @export var start_angle := 0.0
 @export var native_facing := 1           # hacia donde mira el dibujo (+1 derecha)
+@export var caw_interval := Vector2(25.0, 55.0)   # cada cuantos segundos grazna (al azar)
+@export var caw_db := -4.0               # mas bajo que el resto: se oyen a lo lejos
 
 var _center: Vector2
 var _angle: float
@@ -18,9 +20,21 @@ func _ready() -> void:
 	frame = randi() % sprite_frames.get_frame_count("fly")
 	play("fly")
 	_update(0.0)
+	_schedule_caw(true)
 
 func _process(delta: float) -> void:
 	_update(delta)
+
+## Grazna de vez en cuando. El primero tarda mas, para que no suenen todos al abrir la pantalla.
+func _schedule_caw(first := false) -> void:
+	var wait := randf_range(caw_interval.x, caw_interval.y)
+	if first:
+		wait = randf_range(6.0, caw_interval.y)
+	await get_tree().create_timer(wait).timeout
+	if not is_inside_tree():
+		return
+	Sfx.play_group(&"vulture", caw_db)
+	_schedule_caw()
 
 func _update(delta: float) -> void:
 	_t += delta

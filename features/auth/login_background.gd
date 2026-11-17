@@ -2,7 +2,7 @@ extends CanvasLayer
 ## Fondo del login: la luna sube, se vuelve roja y el cielo pasa de frio a rojo.
 ## Animacion de una sola pasada; termina igual que la imagen de referencia.
 
-const MOON_END := Vector2(325, 71)
+const MOON_END := Vector2(325, 66)
 const RISE := 24.0            # px que sube la luna
 const RISE_TIME := 20.0
 const RED_DELAY := 6.0

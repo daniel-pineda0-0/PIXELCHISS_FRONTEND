@@ -50,15 +50,22 @@ func _start_cycle() -> void:
 	t.parallel().tween_property(rubble, "modulate:a", 1.0, 0.9)
 	t.tween_interval(rubble_time)
 	t.tween_callback(_set_frame.bind(0))                          # el castillo (invisible) vuelve al frame intacto
+	t.tween_callback(Sfx.play.bind(&"rebuild"))
 	t.tween_property(castle, "modulate:a", 1.0, 1.6)             # y se reconstruye
 	t.parallel().tween_property(rubble, "modulate:a", 0.0, 1.6)
 	t.tween_callback(_start_cycle)
+
+func _exit_tree() -> void:
+	# al salir del menu no quedan sonando el vuelo, la explosion ni el derrumbe
+	for sound in [&"fireball", &"explosion", &"collapse", &"rebuild"]:
+		Sfx.stop(sound)
 
 func _set_frame(i: int) -> void:
 	if i < castle_frames.size():
 		castle.texture = castle_frames[i]
 
 func _launch() -> void:
+	Sfx.play(&"fireball")
 	_move_fireball(0.0)
 	fireball.visible = true
 	trail.emitting = true
@@ -70,6 +77,8 @@ func _move_fireball(t: float) -> void:
 	fireball.rotation = tangent.angle()
 
 func _impact() -> void:
+	Sfx.stop(&"fireball")
+	Sfx.play(&"explosion")
 	fireball.visible = false
 	trail.emitting = false
 	_set_frame(1)
@@ -81,6 +90,7 @@ func _impact() -> void:
 	_shake(3.0, 0.45)
 
 func _collapse() -> void:
+	Sfx.play(&"collapse")
 	_set_frame(3)
 	debris.position = COLLAPSE_POINT
 	debris.restart()

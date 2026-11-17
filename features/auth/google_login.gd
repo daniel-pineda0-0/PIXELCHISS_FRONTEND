@@ -7,20 +7,32 @@ var _peer: StreamPeerTCP
 var _state := ""
 var _done := false
 var _handled := false
+var callback_port := 0
 
 func start(timeout_sec := 120.0) -> void:
 	_state = Crypto.new().generate_random_bytes(32).hex_encode()  # 64 chars hex
-	var port := 0
-	for p in range(49152, 49200):
-		if _server.listen(p, "127.0.0.1") == OK:
-			port = p
-			break
-	if port == 0:
-		_finish(false, "No hay puertos libres"); return
+	callback_port = _open_port()
+	if callback_port == 0:
+		_finish(false, "No se pudo abrir un puerto local para el login"); return
 	OS.shell_open("%s/oauth2/authorization/google?client_state=%s&client_port=%d"
-			% [Config.BASE_URL, _state, port])
+			% [Config.BASE_URL, _state, callback_port])
 	get_tree().create_timer(timeout_sec).timeout.connect(
 			func(): _finish(false, "Tiempo de espera agotado"))
+
+## Abre un puerto local libre para recibir el callback del servidor (acepta 1024-65535).
+## Primero deja que el sistema elija uno; asi se evitan los rangos que Windows reserva
+## (Hyper-V, WSL, Docker). Si eso falla, prueba puertos al azar en todo el rango.
+func _open_port() -> int:
+	if _server.listen(0, "127.0.0.1") == OK:
+		var chosen := _server.get_local_port()
+		if chosen >= 1024:
+			return chosen
+		_server.stop()
+	for _i in 200:
+		var p := randi_range(1024, 65535)
+		if _server.listen(p, "127.0.0.1") == OK:
+			return p
+	return 0
 
 func _process(_d: float) -> void:
 	if _done or _handled:

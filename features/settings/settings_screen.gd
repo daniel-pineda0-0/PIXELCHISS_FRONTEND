@@ -21,14 +21,15 @@ const LOGOUT_CONFIRM_TEXT := "Seguro?"
 @onready var resolution_option: OptionButton = %ResolutionOption
 @onready var player_label: Label = %PlayerLabel
 @onready var logout_button: Button = %LogoutButton
-@onready var close_button = %CloseButton          # JoinButton (tiene set_text)
+@onready var close_button: Button = %CloseButton
+@onready var account_row: Control = %AccountRow
+@onready var account_separator: Control = %HSeparator2
 
 var _resolutions: Array[Vector2i] = []
 var _confirming := false
 var _logging_out := false
 
 func _ready() -> void:
-	close_button.set_text("Back")
 	close_button.pressed.connect(close)
 
 	_bind_slider(master_slider, master_value, Settings.BUS_MASTER)
@@ -46,6 +47,11 @@ func _ready() -> void:
 	_build_resolutions()
 	resolution_option.disabled = Settings.fullscreen
 	resolution_option.item_selected.connect(_on_resolution_selected)
+
+	# sin sesion (pantalla de login) no hay cuenta que mostrar
+	var logged := Session.is_logged_in()
+	account_row.visible = logged
+	account_separator.visible = logged
 
 	var player_name: String = str(Session.profile.get("displayName", "-"))
 	player_label.text = "Jugador: " + player_name

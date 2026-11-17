@@ -3,14 +3,12 @@ extends Control
 ## Los mensajes de error (sala llena, código incorrecto, partida iniciada,
 ## expulsado) los manda lobby-service y aquí solo se muestran.
 
-@onready var create_button = %CreateButton    # JoinButton (tiene set_text)
+@onready var create_button: Button = %CreateButton
 @onready var code_input: LineEdit = %CodeInput
-@onready var join_button = %JoinButton          # JoinButton (tiene set_text)
+@onready var join_button: Button = %JoinButton
 @onready var status_label: Label = %StatusLabel
 
 func _ready() -> void:
-	create_button.set_text("New")
-	join_button.set_text("Join")
 	status_label.text = Lobby.notice    # p. ej. "Fuiste expulsado de la sala"
 	Lobby.notice = ""
 	code_input.text_changed.connect(_on_code_input_text_changed)
@@ -26,6 +24,7 @@ func _on_join_button_pressed() -> void:
 	var code := code_input.text.strip_edges()
 	if code.is_empty():
 		status_label.text = "Escribe el codigo de la sala"
+		Sfx.play(&"error")
 		return
 	_set_busy(true)
 	status_label.text = "Entrando a la sala..."
@@ -38,6 +37,7 @@ func _after_enter(result: Dictionary) -> void:
 		get_tree().change_scene_to_file(GameState.LOADING_SCENE)
 	else:
 		status_label.text = result.error
+		Sfx.play(&"error")
 		_set_busy(false)
 
 ## El código siempre se escribe en mayúsculas (los códigos de sala lo son).

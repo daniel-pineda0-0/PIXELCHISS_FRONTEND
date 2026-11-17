@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://bn24uubh4qxut" path="res://features/game/game_ui.gd" id="1_mvj5b"]
 [ext_resource type="PackedScene" uid="uid://b1pnp7ocd4y5" path="res://features/game/game_pice.tscn" id="2_7rcnj"]
 [ext_resource type="PackedScene" uid="uid://dxv2es6l706c8" path="res://features/game/player_card_game.tscn" id="3_hukp0"]
+[ext_resource type="PackedScene" uid="uid://dwvbpu53ia6qc" path="res://features/game/trivia_ui.tscn" id="4_7rcnj"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6chcw"]
 
@@ -70,3 +71,6 @@ size_flags_horizontal = 8
 
 [node name="Control" parent="GameHUD/MarginContainer/Players" unique_id=939403117 instance=ExtResource("3_hukp0")]
 layout_mode = 2
+
+[node name="TriviaUI" parent="." unique_id=51980602 instance=ExtResource("4_7rcnj")]
+visible = false

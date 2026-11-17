@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://ghduxfycgf7"]
 
 [ext_resource type="Script" uid="uid://bqvcplpn0e2uu" path="res://features/loading/loading_screen.gd" id="1_0g1l4"]
+[ext_resource type="LabelSettings" uid="uid://dft2d8hc78d73" path="res://service/assets/ui/prefabs/PixelFontWhite.tres" id="2_v0py5"]
 
 [node name="LoadingScreen" type="Control" unique_id=436969487]
 layout_mode = 3
@@ -25,3 +26,4 @@ offset_bottom = 11.5
 grow_horizontal = 2
 grow_vertical = 2
 text = "Cargando..."
+label_settings = ExtResource("2_v0py5")

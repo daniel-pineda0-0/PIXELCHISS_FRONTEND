@@ -23,6 +23,8 @@ Session="*uid://dv5wncbn41mux"
 GameState="*uid://byqcjnesry01l"
 Lobby="*uid://b6j7oufb2jiv"
 Settings="*uid://4c58giop4tul"
+Board="*res://autoloads/board.gd"
+GameNet="*res://autoloads/game_net.gd"
 
 [display]
 

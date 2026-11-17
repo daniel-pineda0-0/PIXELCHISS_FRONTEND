@@ -8,7 +8,7 @@ const LOADING_SCENE := "res://features/loading/loading_screen.tscn"
 const SCENES := {
 	State.MENU: "res://features/lobby/menu_screen.tscn",
 	State.LOBBY: "res://features/lobby/room_screen.tscn",
-	State.GAME: "res://features/lobby/room_screen.tscn",
+	State.GAME: "res://features/game/game.tscn",
 }
 
 signal state_changed(new_state: State)
@@ -19,6 +19,7 @@ var map_id := ""
 
 func _ready() -> void:
 	Lobby.session_expired.connect(expire_session)
+	GameNet.session_expired.connect(expire_session)
 
 func set_state(new_state: State) -> void:
 	if state == new_state:
@@ -44,9 +45,21 @@ func start_game(lobby: Dictionary) -> void:
 
 ## Sesión vencida (US-002 esc. 3): se limpian los tokens y se vuelve al login.
 func expire_session() -> void:
+	GameNet.leave()
 	Lobby.clear()
 	Session.clear()
 	reset()
+	get_tree().change_scene_to_file(LOADING_SCENE)
+
+## Salida de la partida (error fatal, conexión perdida, fin): vuelve al menú
+## mostrando `notice` si se pasa.
+func leave_game(notice := "") -> void:
+	GameNet.leave()
+	Lobby.clear()
+	Lobby.notice = notice
+	game_id = ""
+	map_id = ""
+	set_state(State.MENU)
 	get_tree().change_scene_to_file(LOADING_SCENE)
 
 func reset() -> void:

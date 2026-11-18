@@ -16,10 +16,13 @@
 [node name="PlayerGroundCience" parent="level" unique_id=1598695971 instance=ExtResource("1_0ldwk")]
 
 [node name="PlayerGroundCience2" parent="level" unique_id=301230024 instance=ExtResource("1_0ldwk")]
+number_part = -1
 
 [node name="PlayerGroundCience3" parent="level" unique_id=904062293 instance=ExtResource("1_0ldwk")]
+number_part = -2
 
 [node name="PlayerGroundCience4" parent="level" unique_id=2067415554 instance=ExtResource("1_0ldwk")]
+number_part = -3
 
 [node name="GroundPice" parent="level" unique_id=1343878869 instance=ExtResource("2_uaet7")]
 position = Vector2(83, 5)

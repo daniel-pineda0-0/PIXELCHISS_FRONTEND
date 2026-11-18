@@ -1,8 +1,8 @@
 extends Node2D
 ## Escena de la partida. Fase 0: carga el mundo del mapa elegido en el lobby,
 ## descarga el tablero del servidor y abre la conexión en tiempo real.
-## Las fichas, el HUD y las animaciones se conectan después a las señales de
-## GameNet (US-020 en adelante).
+## US-020: BoardView dibuja los chunks y las fichas en el mundo, y GameUI el
+## minimapa. Las animaciones de movimiento llegan en las fases siguientes.
 
 const WORLDS := {
 	"classic": "res://features/game/world_clasic.tscn",
@@ -10,6 +10,7 @@ const WORLDS := {
 }
 
 var world: Node2D
+var view: BoardView
 var _debug: Label
 
 func _ready() -> void:
@@ -17,6 +18,7 @@ func _ready() -> void:
 		GameState.leave_game.call_deferred("No hay una partida en curso")
 		return
 	_load_world(GameState.map_id)
+	_build_board_view()
 	_build_debug_overlay()
 	GameNet.fatal.connect(_on_fatal)
 	GameNet.events_received.connect(_on_events)
@@ -40,6 +42,18 @@ func _load_world(map_id: String) -> void:
 	world = packed.instantiate()
 	add_child(world)
 	move_child(world, 0)      # el HUD (GameUI es CanvasLayer) siempre queda encima
+
+func _build_board_view() -> void:
+	view = BoardView.new()
+	view.name = "BoardView"
+	add_child(view)
+	view.setup(world)
+	GameNet.state_changed.connect(view.refresh)
+	var ui := get_node_or_null("GameUI")
+	if ui != null and ui.has_signal("view_step"):
+		ui.connect("view_step", view.step_focus)
+	if not GameNet.state.is_empty():
+		view.refresh(GameNet.state)
 
 func _on_fatal(_code: String, message: String) -> void:
 	GameState.leave_game(message)

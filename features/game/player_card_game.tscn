@@ -4,14 +4,6 @@
 [ext_resource type="Script" uid="uid://dpg8m65xq71g2" path="res://features/game/player_card_game.gd" id="1_7dq3g"]
 [ext_resource type="Texture2D" uid="uid://gmo3yhvj8tta" path="res://service/assets/ui/icons/ph_player_card_color_circle.png" id="1_r1g4g"]
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_wbvff"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_3xn04"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_r1g4g"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7dq3g"]
-
 [node name="PlayerCardGame" type="Control" unique_id=939403117]
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 3
@@ -45,10 +37,3 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 
 [node name="dices" parent="VBoxContainer/Dices/AspectRatioContainer" unique_id=1637022031 instance=ExtResource("1_3xn04")]
-
-[node name="PlayerButton" type="Button" parent="VBoxContainer/Dices" unique_id=1340409881]
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxEmpty_wbvff")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_3xn04")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_r1g4g")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_7dq3g")

@@ -569,49 +569,56 @@ position = Vector2(-13, -38)
 position = Vector2(13, 34)
 rotation = -1.5707964
 rest = Transform2D(-4.371139e-08, -1, 1, -4.371139e-08, 13, 34)
-editor_settings/show_bone_gizmo = false
 
 [node name="hip" type="Bone2D" parent="Node2D/Skeleton2D/hipBone2D" unique_id=2116168348]
 position = Vector2(4, 9.536743e-07)
 rest = Transform2D(1, 0, 0, 1, 0, 0)
-editor_settings/show_bone_gizmo = false
 
 [node name="torso" type="Bone2D" parent="Node2D/Skeleton2D/hipBone2D/hip" unique_id=1560989420]
 position = Vector2(3, -1.1924882e-08)
 rotation = 1.5707964
 rest = Transform2D(-4.371139e-08, 1, -1, -4.371139e-08, 3, -1.1924882e-08)
-editor_settings/show_bone_gizmo = false
 
 [node name="head" type="Bone2D" parent="Node2D/Skeleton2D/hipBone2D/hip/torso" unique_id=907845067]
 position = Vector2(-4.609637e-07, -10)
 rotation = 1.5707964
 rest = Transform2D(-4.371139e-08, 1, -1, -4.371139e-08, -4.609637e-07, -10)
-editor_settings/show_bone_gizmo = false
+auto_calculate_length_and_angle = false
+length = 11.452
+bone_angle = -180.0
 
 [node name="ra" type="Bone2D" parent="Node2D/Skeleton2D/hipBone2D/hip/torso" unique_id=929414446]
 position = Vector2(-7.0000005, -6.9999995)
 rotation = -3.1415925
 rest = Transform2D(-1, -8.742278e-08, 8.742278e-08, -1, -7.0000005, -6.9999995)
-editor_settings/show_bone_gizmo = false
+auto_calculate_length_and_angle = false
+length = 12.0
+bone_angle = 270.0
 
 [node name="la" type="Bone2D" parent="Node2D/Skeleton2D/hipBone2D/hip/torso" unique_id=2109393719]
 position = Vector2(9.000002, -7.0000014)
 rotation = -1.5707964
 scale = Vector2(0.99999994, 0.99999994)
 rest = Transform2D(1.192488e-08, -0.99999994, 0.99999994, 1.192488e-08, 9.000002, -7.0000014)
-editor_settings/show_bone_gizmo = false
+auto_calculate_length_and_angle = false
+length = 12.0
+bone_angle = 180.0
 
 [node name="rl" type="Bone2D" parent="Node2D/Skeleton2D/hipBone2D/hip" unique_id=1435526326]
 position = Vector2(-1, -4)
 rotation = -3.1415925
 rest = Transform2D(-1, -8.742278e-08, 8.742278e-08, -1, -1, -4)
-editor_settings/show_bone_gizmo = false
+auto_calculate_length_and_angle = false
+length = 7.0
+bone_angle = 0.0
 
 [node name="ll" type="Bone2D" parent="Node2D/Skeleton2D/hipBone2D/hip" unique_id=755402789]
 position = Vector2(-1, 4)
 rotation = -1.5707964
 rest = Transform2D(1.1924881e-08, -1, 1, 1.1924881e-08, -1, 4)
-editor_settings/show_bone_gizmo = false
+auto_calculate_length_and_angle = false
+length = 7.0
+bone_angle = -90.0
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1963225954]
 root_node = NodePath("../Node2D/Skeleton2D")

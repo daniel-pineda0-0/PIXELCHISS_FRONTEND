@@ -2,7 +2,6 @@
 
 [ext_resource type="Texture2D" uid="uid://d1osuxd47blw2" path="res://service/assets/game/ph_cience_ground_tile.png" id="1_1m0wd"]
 [ext_resource type="Script" uid="uid://drfvf4d6j0y87" path="res://features/game/player_ground.gd" id="2_o1nv8"]
-[ext_resource type="PackedScene" uid="uid://bekmrrja3ikct" path="res://features/game/ground_pice.tscn" id="3_mr4ot"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_o1nv8"]
 texture = ExtResource("1_1m0wd")
@@ -49,9 +48,6 @@ script = ExtResource("2_o1nv8")
 tile_set = SubResource("TileSet_614an")
 format = 2
 layer_0/tile_data = PackedInt32Array(131073, 393218, 3, 131074, 458754, 3, 262135, 65538, 2, 327671, 65538, 3, 393207, 65538, 3, 262136, 131074, 2, 327672, 65538, 3, 393208, 65538, 3, 262137, 65538, 2, 327673, 65538, 3, 393209, 65538, 3, 262138, 131074, 2, 327674, 65538, 3, 393210, 65538, 3, 262139, 131074, 1, 327675, 65538, 3, 393211, 65538, 3, 262140, 131074, 2, 327676, 65538, 3, 393212, 65538, 3, 262141, 65538, 2, 327677, 65538, 3, 393213, 65538, 3, 262142, 131074, 2, 327678, 65538, 3, 393214, 65538, 3, 262143, 65538, 2, 327679, 65538, 3, 393215, 65538, 3, 196608, 131074, 2, 262144, 65538, 3, 327680, 65538, 3, 196609, 65538, 2, 262145, 65538, 3, 327681, 65538, 3, 196610, 131074, 0, 262146, 65538, 3, 327682, 65538, 3, 196611, 65538, 2, 262147, 65538, 3, 327683, 65538, 3, 196612, 131074, 2, 262148, 65538, 3, 327684, 65538, 3, 196613, 65538, 2, 262149, 65538, 3, 327685, 65538, 3, 196614, 131074, 2, 262150, 65538, 3, 327686, 65538, 3, 196615, 131074, 1, 262151, 65538, 3, 327687, 65538, 3)
-
-[node name="GroundPice" parent="PlayerGround" unique_id=1343878869 instance=ExtResource("3_mr4ot")]
-position = Vector2(64, -1)
 
 [node name="PrisonCell" type="TileMap" parent="PlayerGround" unique_id=1761620274]
 tile_set = SubResource("TileSet_614an")

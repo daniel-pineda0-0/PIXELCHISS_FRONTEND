@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://d1b5hb7urtepc"]
 
 [ext_resource type="PackedScene" uid="uid://cpslhnjct30os" path="res://features/game/player_ground_cience.tscn" id="1_0ldwk"]
-[ext_resource type="PackedScene" uid="uid://bekmrrja3ikct" path="res://features/game/ground_pice.tscn" id="2_uaet7"]
 
 [node name="WorldCience" type="Node2D" unique_id=1968728586]
 
@@ -23,8 +22,5 @@ number_part = -2
 
 [node name="PlayerGroundCience4" parent="level" unique_id=2067415554 instance=ExtResource("1_0ldwk")]
 number_part = -3
-
-[node name="GroundPice" parent="level" unique_id=1343878869 instance=ExtResource("2_uaet7")]
-position = Vector2(83, 5)
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1228748300]

@@ -2,7 +2,10 @@ extends Node2D
 ## Escena de la partida. Fase 0: carga el mundo del mapa elegido en el lobby,
 ## descarga el tablero del servidor y abre la conexión en tiempo real.
 ## US-020: BoardView dibuja los chunks y las fichas en el mundo, y GameUI el
-## minimapa. Las animaciones de movimiento llegan en las fases siguientes.
+## minimapa.
+## Fase 2 (US-006, US-011, US-013, US-010): BoardView muestra los movimientos
+## legales del servidor y manda el elegido; GameUI lleva el turno, los dados y
+## los avisos. Aquí solo se conectan las señales de GameNet a cada uno.
 
 const WORLDS := {
 	"classic": "res://features/game/world_clasic.tscn",
@@ -49,6 +52,9 @@ func _build_board_view() -> void:
 	add_child(view)
 	view.setup(world)
 	GameNet.state_changed.connect(view.refresh)
+	GameNet.legal_moves_changed.connect(view.on_overlays_changed)
+	GameNet.busy_changed.connect(view.on_overlays_changed)
+	GameNet.events_received.connect(view.handle_events)
 	var ui := get_node_or_null("GameUI")
 	if ui != null and ui.has_signal("view_step"):
 		ui.connect("view_step", view.step_focus)

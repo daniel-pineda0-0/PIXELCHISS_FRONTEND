@@ -11,7 +11,8 @@ enum Kind { TARGET, HALO, BURST }
 var kind := Kind.TARGET
 var label := ""
 var color := Color.WHITE
-var move: Dictionary = {}           # elemento de legalMoves que ejecuta este marcador
+var move: Dictionary = {}           # elemento de legalMoves (o de card.choices si is_card) que ejecuta este marcador
+var is_card := false                # TARGET de una carta (CARD_TARGET) y no de un movimiento
 var chunk := 0                      # TARGET: chunk y celda donde se dibuja
 var cell := Vector2i.ZERO
 

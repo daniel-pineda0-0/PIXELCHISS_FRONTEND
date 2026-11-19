@@ -7,6 +7,7 @@ const DIM := Color(1, 1, 1, 0.55)
 const LABEL_WHITE := preload("res://service/assets/ui/prefabs/PixelFontWhite.tres")
 
 var _crown_label: Label
+var _effect_label: Label
 
 @onready var _circle := get_node_or_null("VBoxContainer/PlayerCard") as Control
 @onready var _dice_panel := get_node_or_null("VBoxContainer/Dices") as Control
@@ -50,6 +51,26 @@ func set_crowned(count: int, total := 4) -> void:
 		_crown_label.mouse_filter = Control.MOUSE_FILTER_STOP
 		box.add_child(_crown_label)
 	_crown_label.text = "%d/%d" % [count, total]
+
+## Efectos activos del jugador (`players[].effects`, p. ej. turno perdido). Se
+## muestran como etiqueta corta bajo la tarjeta y detallados en el tooltip; sin
+## efectos, la etiqueta se oculta. La etiqueta se crea la primera vez que hace falta.
+func set_effects(effects: Array) -> void:
+	if _effect_label == null:
+		if effects.is_empty():
+			return
+		var box := get_node_or_null("VBoxContainer")
+		if box == null:
+			return
+		_effect_label = Label.new()
+		_effect_label.label_settings = LABEL_WHITE.duplicate() as LabelSettings
+		_effect_label.label_settings.font_color = Color(1.0, 0.5, 0.45)
+		_effect_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_effect_label.mouse_filter = Control.MOUSE_FILTER_STOP
+		box.add_child(_effect_label)
+	_effect_label.visible = not effects.is_empty()
+	_effect_label.text = GameText.effects_tags(effects)
+	_effect_label.tooltip_text = GameText.effects_tooltip(effects)
 
 func hide_card() -> void:
 	visible = false

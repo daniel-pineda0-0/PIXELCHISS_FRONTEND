@@ -17,6 +17,11 @@ extends Node
 ## cliente no calcula reglas: elegir una ficha muestra sus destinos y tocar uno
 ## envía ese movimiento tal cual. Los aros indican fichas protegidas (seguro o
 ## corredor), fichas movibles y la elegida; las capturas muestran un destello.
+##
+## Fase 4 (cartas): cuando el servidor pide un objetivo (`state.card.choices`) al
+## jugador local, las opciones se dibujan igual que los movimientos: casillas
+## marcadas (matar a tu elección) o ficha + destino (avanzar a zona segura). Tocar
+## una envía CARD_TARGET con esa opción tal cual.
 
 const PIECE_SCENE := preload("res://features/game/ground_pice.tscn")
 const IDLE_ANIMATION := &"idl_ground_pice"
@@ -26,7 +31,7 @@ const CAMERA_TIME := 0.35
 ## Desplazamiento vertical de la cámara respecto al centro del chunk. Negativo = el
 ## mapa se ve más abajo. El suelo mide 5 filas (160 px) y el minimapa llega a y≈196:
 ## con -48 la fila del recorrido queda por debajo del minimapa. Ajustar aquí.
-const CAMERA_OFFSET_Y := -48.0
+const CAMERA_OFFSET_Y := -128.0
 const CLICK_RADIUS := 16.0            # qué tan cerca del centro hay que tocar una ficha o un destino
 const SLIDE_TIME := 0.28              # tiempo que tarda una ficha en deslizarse a su casilla nueva
 
@@ -55,6 +60,7 @@ var _halos := {}                      # id de ficha -> MoveMarker (HALO)
 var _targets: Array = []              # MoveMarker (TARGET) de la ficha elegida
 var _selected_piece := ""
 var _focused_piece := ""              # última ficha a la que se llevó la cámara
+var _focused_card := ""               # último desafío de carta al que se llevó la cámara
 var _prev_placements := {}            # colocación de las fichas antes del último refresh()
 var _slide := {}                      # id de ficha -> desfase que se va apagando (animación)
 var _slide_tweens := {}
@@ -206,8 +212,9 @@ func handle_events(events: Array, _version: int = 0) -> void:
 		var data: Dictionary = e.data if e.get("data") is Dictionary else {}
 		var piece_id := str(data.get("pieceId", ""))
 		match str(e.get("type", "")):
-			"PIECE_CAPTURED":
+			"PIECE_CAPTURED", "CARD_PIECE_RETURNED":
 				# El estado nuevo ya sacó la ficha del tablero: el destello va donde estaba.
+				# (CARD_PIECE_RETURNED: carta o castigo que la devolvió a casa, sin ficha atacante.)
 				var prev: Dictionary = _prev_placements.get(piece_id, {})
 				if prev.is_empty() or not _chunks.has(prev.chunk):
 					continue
@@ -274,9 +281,14 @@ func _rebuild_overlays() -> void:
 	_targets.clear()
 
 	var moves := _usable_moves()
+	var card_choices := _usable_card_choices()
 	var movable := {}
 	for m in moves:
 		movable[str(m.get("pieceId", ""))] = true
+	for c in card_choices:
+		var choice_piece := GameText.s(c.get("pieceId"))
+		if choice_piece != "" and _choice_cell(c) >= 0:
+			movable[choice_piece] = true                    # carta que mueve una ficha propia: se elige primero
 	if not movable.has(_selected_piece):
 		_selected_piece = ""
 	if _selected_piece == "" and movable.size() == 1:
@@ -330,12 +342,96 @@ func _rebuild_overlays() -> void:
 			_target_layer.add_child(target)
 			_targets.append(target)
 
+	_add_card_targets(card_choices)
+
 	# La cámara sigue a la ficha elegida (solo cuando cambia la elección).
 	if _selected_piece != _focused_piece:
 		_focused_piece = _selected_piece
 		if _selected_piece != "" and _placements.has(_selected_piece):
 			focus_seat(int(_placements[_selected_piece].chunk))
+	_focus_card_targets(card_choices)
 	_place_pieces()
+
+# --- Objetivos de carta (Fase 4) ---------------------------------------------------------
+
+## Opciones de `state.card` que el jugador local puede tocar ahora. Vacío si la
+## carta no es suya, ruedan unos dados o hay una acción en vuelo.
+func _usable_card_choices() -> Array:
+	if RollHold.active() or GameNet.busy:
+		return []
+	var card: Variant = GameNet.state.get("card")
+	if not (card is Dictionary) or str(card.get("playerId", "")) != GameNet.me:
+		return []
+	var choices: Variant = card.get("choices")
+	return choices if choices is Array else []
+
+## Casilla de una opción: `targetPosition`, o donde está la ficha `targetPieceId`. -1 si no hay.
+func _choice_cell(choice: Dictionary) -> int:
+	var pos: Variant = choice.get("targetPosition")
+	if pos != null:
+		return int(pos)
+	var target_piece := GameText.s(choice.get("targetPieceId"))
+	if target_piece != "" and _placements.has(target_piece):
+		return int(_placements[target_piece].cell_id)
+	return -1
+
+## Marca y color según el efecto de la carta (solo presentación).
+func _card_marker() -> Dictionary:
+	var card: Variant = GameNet.state.get("card")
+	var effect := GameText.s(card.get("effectCode")) if card is Dictionary else ""
+	if effect.begins_with("CAPTURE"):
+		return {"label": "X", "color": COLOR_CAPTURE}
+	if effect == "MOVE_SAFE":
+		return {"label": "S", "color": COLOR_SAFE}
+	return {"label": "?", "color": COLOR_PLAIN}
+
+## Dibuja las opciones de la carta. Las que llevan `pieceId` (ficha propia) solo
+## salen cuando esa ficha está elegida; las demás se ven siempre.
+func _add_card_targets(card_choices: Array) -> void:
+	var marker := _card_marker()
+	var seen := {}
+	for c in card_choices:
+		if not (c is Dictionary):
+			continue
+		var choice_piece := GameText.s(c.get("pieceId"))
+		if choice_piece != "" and choice_piece != _selected_piece:
+			continue
+		var cell_id := _choice_cell(c)
+		var key := "%s-%d" % [choice_piece, cell_id]
+		if cell_id < 0 or seen.has(key):
+			continue
+		seen[key] = true
+		var placed := BoardMap.strip_cell(cell_id)
+		if placed.is_empty() or not _chunks.has(placed.seat):
+			continue
+		var target := MoveMarker.new()
+		target.kind = MoveMarker.Kind.TARGET
+		target.label = str(marker.label)
+		target.color = marker.color
+		target.move = c
+		target.is_card = true
+		target.chunk = int(placed.seat)
+		target.cell = placed.cell
+		_target_layer.add_child(target)
+		_targets.append(target)
+
+## Al abrirse una carta con casillas por elegir, la cámara va a la primera si ninguna se ve.
+func _focus_card_targets(card_choices: Array) -> void:
+	var card: Variant = GameNet.state.get("card")
+	var card_id := GameText.s(card.get("id")) if card is Dictionary else ""
+	if card_id == "":
+		_focused_card = ""
+		return
+	if card_choices.is_empty() or card_id == _focused_card:
+		return
+	_focused_card = card_id
+	if _selected_piece != "" or _targets.is_empty():
+		return                                             # con ficha elegida la cámara ya la sigue
+	var current_seat := BoardMap.seat_of_slot(posmod(_focus_index, BoardMap.SEATS))
+	for target in _targets:
+		if target.chunk == current_seat:
+			return
+	focus_seat(int(_targets[0].chunk))
 
 ## Toque o clic en el mundo: primero un destino (envía el movimiento), si no una
 ## ficha movible (la elige). Los botones del HUD consumen sus propios clics.
@@ -349,7 +445,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	for target in _targets:
 		if target.global_position.distance_to(pos) <= CLICK_RADIUS:
 			get_viewport().set_input_as_handled()
-			if GameNet.move(target.move):
+			var sent: bool = GameNet.pick_card(target.move) if target.is_card else GameNet.move(target.move)
+			if sent:
 				_selected_piece = ""
 			return
 	var best := ""

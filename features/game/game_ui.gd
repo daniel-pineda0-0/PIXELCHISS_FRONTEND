@@ -2,6 +2,8 @@ extends CanvasLayer
 ## HUD de la partida.
 ## US-020: minimapa con las fichas de todos los jugadores y botones para recorrer
 ## los chunks del tablero (game.gd los conecta a BoardView).
+## Fase 3: contador de fichas coronadas por jugador (US-015) y pantalla de
+## victoria para todos al terminar la partida (US-014).
 ## Fase 2: turnos (US-006), dados, temporizador, botón de pasar y avisos de
 ## liberar (US-011), zona segura (US-013) y captura (US-010). Todo sale del estado y
 ## los eventos del servidor: aquí no se decide ninguna regla, solo se bloquean las
@@ -13,6 +15,7 @@ const SHARED_CELL_SPACING := 2.0
 const LABEL_WHITE := preload("res://service/assets/ui/prefabs/PixelFontWhite.tres")
 const END_TURN_BUTTON := preload("res://features/lobby/join_button.tscn")
 const SEAT_NAMES := ["Rojo", "Azul", "Verde", "Amarillo"]
+const RESULT_DELAY := 1.2           # deja ver el último movimiento antes de la pantalla final
 const TOAST_TIME := 1.8
 const TOAST_MAX_QUEUE := 3
 const LOW_TIME := 10                # segundos: el cronómetro se pone rojo
@@ -27,7 +30,7 @@ const ERROR_TEXT := {
 	"ROLL_REQUIRED": "Primero lanza los dados",
 	"DOUBLES_REQUIRED": "Necesitas pares para sacar una ficha",
 	"CELL_FULL": "Esa casilla está llena",
-	"OVERSHOOT": "Te pasas de la meta",
+	"OVERSHOOT": "Necesitas el número exacto para coronar",
 	"CROWNED_PIECE": "Esa ficha ya está coronada",
 	"DIE_UNAVAILABLE": "Ese dado ya se usó",
 	"PENDING_CHALLENGE": "Hay un desafío pendiente",
@@ -54,6 +57,8 @@ var _toast_left := 0.0
 var _tick := 0.0
 var _prev_turn_player := ""
 var _exit_warned_version := -1
+var _result_scheduled := false
+var _result_panel: Control
 var _last_dice := {}                # asiento -> últimos dados que sacó (se conservan entre turnos)
 var _pending_events: Array = []     # eventos en espera mientras ruedan los dados
 var _was_holding := false
@@ -238,6 +243,7 @@ func _refresh_turn(state: Dictionary) -> void:
 	var consumed: Array = turn.get("consumed", []) if turn.get("consumed") is Array else []
 	if active_seat >= 0 and dice.size() == 2:
 		_last_dice[active_seat] = dice            # también cubre entrar a media partida
+	var crowned := _crowned_by_seat(state)
 
 	for seat in _cards:
 		var card: PlayerCardGame = _cards[seat]
@@ -245,6 +251,7 @@ func _refresh_turn(state: Dictionary) -> void:
 		card.set_active(is_active)
 		# Cada tarjeta conserva la última tirada de su jugador; solo el del turno marca los dados gastados.
 		card.show_dice(_last_dice.get(seat, []), consumed if is_active else [])
+		card.set_crowned(int(crowned.get(seat, 0)))
 
 	if _dices != null:
 		var my_seat := int(GameNet.player(GameNet.me).get("seat", -1))
@@ -252,6 +259,17 @@ func _refresh_turn(state: Dictionary) -> void:
 	if _end_button != null:
 		_end_button.visible = _can_end_turn()
 	_update_turn_label()
+	if state.get("status") != "ACTIVE":
+		_schedule_result()
+
+## Fichas coronadas por asiento, contadas del snapshot.
+func _crowned_by_seat(state: Dictionary) -> Dictionary:
+	var counts := {}
+	for p in state.get("pieces", []):
+		if str(p.get("status", "")) == "CROWNED":
+			var seat := BoardMap.seat_of_piece(p)
+			counts[seat] = int(counts.get(seat, 0)) + 1
+	return counts
 
 func _update_turn_label() -> void:
 	if _turn_label == null:
@@ -404,6 +422,8 @@ func _handle_event(e: Variant) -> void:
 			_on_piece_moved(data)
 		"PIECE_CAPTURED":
 			_on_piece_captured(data)
+		"GAME_FINISHED", "GAME_ABANDONED":
+			_schedule_result()
 
 func _on_dice_rolled(data: Dictionary) -> void:
 	var who := str(data.get("playerId", ""))
@@ -425,7 +445,10 @@ func _on_piece_moved(data: Dictionary) -> void:
 	if data.get("cardId") != null:
 		return                                            # movimiento por carta: Fase 4
 	var owner_id := _owner_of_piece(str(data.get("pieceId", "")))
-	if data.get("from") == null:                          # sale de casa (US-011)
+	if str(data.get("status", "")) == "CROWNED":         # US-015
+		_toast("¡Ficha coronada!" if owner_id == GameNet.me \
+				else "%s coronó una ficha" % _short_name(_player_name(owner_id)))
+	elif data.get("from") == null:                        # sale de casa (US-011)
 		_toast("Sacaste una ficha" if owner_id == GameNet.me \
 				else "%s sacó una ficha" % _short_name(_player_name(owner_id)))
 	elif owner_id == GameNet.me and data.get("to") != null:
@@ -483,6 +506,86 @@ func _flash_screen() -> void:
 	_flash.color.a = 0.35
 	var tween := create_tween()
 	tween.tween_property(_flash, "color:a", 0.0, 0.5)
+
+# --- Fin de la partida (US-014) -----------------------------------------------------------------------
+
+## Pantalla de victoria para todos los jugadores. Solo hay un ganador y no se
+## juega por puestos. Se muestra una vez, con un respiro tras el último movimiento.
+func _schedule_result() -> void:
+	if _result_scheduled or _hud == null:
+		return
+	_result_scheduled = true
+	await get_tree().create_timer(RESULT_DELAY).timeout
+	if is_inside_tree():
+		_show_result()
+
+func _show_result() -> void:
+	var status := str(GameNet.state.get("status", ""))
+	var winner_id := str(GameNet.state.get("winnerId", "")) if GameNet.state.get("winnerId") != null else ""
+	var title := "FIN DE LA PARTIDA"
+	var detail := "La partida terminó sin ganador"
+	var swatch := Color(0.6, 0.6, 0.6)
+	var crowned_text := ""
+	if status == "FINISHED" and winner_id != "":
+		var seat := int(GameNet.player(winner_id).get("seat", -1))
+		if seat >= 0:
+			swatch = BoardMap.SEAT_COLORS[posmod(seat, BoardMap.SEATS)]
+		title = "¡GANASTE!" if winner_id == GameNet.me else "¡VICTORIA!"
+		detail = "Ganó %s (%s)" % [_short_name(_player_name(winner_id)),
+				SEAT_NAMES[posmod(seat, SEAT_NAMES.size())] if seat >= 0 else "?"]
+		crowned_text = "4 fichas coronadas"
+
+	_result_panel = Control.new()
+	_result_panel.mouse_filter = Control.MOUSE_FILTER_STOP     # nada debajo recibe clics
+	_hud.add_child(_result_panel)
+	_result_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.7)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_result_panel.add_child(dim)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var center := CenterContainer.new()
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_result_panel.add_child(center)
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var panel := PanelContainer.new()
+	center.add_child(panel)
+	var margin := MarginContainer.new()
+	for side in ["left", "right", "top", "bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 14)
+	panel.add_child(margin)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 10)
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
+	margin.add_child(box)
+
+	var title_settings := LABEL_WHITE.duplicate() as LabelSettings
+	title_settings.font_size = 16
+	box.add_child(_result_label(title, title_settings))
+	var color_block := ColorRect.new()
+	color_block.color = swatch
+	color_block.custom_minimum_size = Vector2(24, 24)
+	color_block.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	box.add_child(color_block)
+	box.add_child(_result_label(detail, LABEL_WHITE))
+	if crowned_text != "":
+		box.add_child(_result_label(crowned_text, LABEL_WHITE))
+	var back := END_TURN_BUTTON.instantiate() as TextureButton
+	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	box.add_child(back)
+	back.set_text("Menú")
+	back.pressed.connect(_on_result_back)
+
+func _result_label(text: String, settings: LabelSettings) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.label_settings = settings
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	return label
+
+## Vuelve al menú (el destino exacto está por confirmar).
+func _on_result_back() -> void:
+	GameState.leave_game()
 
 # --- Nombres ------------------------------------------------------------------------------------------
 

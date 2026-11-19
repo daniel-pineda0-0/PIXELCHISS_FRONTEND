@@ -203,14 +203,23 @@ func handle_events(events: Array, _version: int = 0) -> void:
 		_pending_events.append_array(events)
 		return
 	for e in events:
-		if str(e.get("type", "")) != "PIECE_CAPTURED":
-			continue
 		var data: Dictionary = e.data if e.get("data") is Dictionary else {}
-		# El estado nuevo ya sacó la ficha del tablero: el destello va donde estaba.
-		var prev: Dictionary = _prev_placements.get(str(data.get("pieceId", "")), {})
-		if prev.is_empty() or not _chunks.has(prev.chunk):
-			continue
-		MoveMarker.burst(_pieces_layer, _cell_world(prev.chunk, prev.cell) + Vector2(prev.shift, 0))
+		var piece_id := str(data.get("pieceId", ""))
+		match str(e.get("type", "")):
+			"PIECE_CAPTURED":
+				# El estado nuevo ya sacó la ficha del tablero: el destello va donde estaba.
+				var prev: Dictionary = _prev_placements.get(piece_id, {})
+				if prev.is_empty() or not _chunks.has(prev.chunk):
+					continue
+				MoveMarker.burst(_pieces_layer, _cell_world(prev.chunk, prev.cell) + Vector2(prev.shift, 0))
+			"PIECE_MOVED":
+				if str(data.get("status", "")) != "CROWNED":
+					continue
+				# Coronación (US-015): destello dorado en la corona, donde ya está la ficha.
+				var now: Dictionary = _placements.get(piece_id, {})
+				if now.is_empty() or not _chunks.has(now.chunk):
+					continue
+				MoveMarker.burst(_pieces_layer, _cell_world(now.chunk, now.cell) + Vector2(now.shift, 0), COLOR_CROWN)
 
 ## Aplica lo que quedó en espera durante la animación de los dados: primero el
 ## estado (las fichas se deslizan), luego los eventos (destello de captura) y por
@@ -278,7 +287,8 @@ func _rebuild_overlays() -> void:
 		var pl: Dictionary = _placements[id]
 		var guarded: bool = pl.status == "BOARD" and _is_protected_cell(int(pl.cell_id))
 		var can_move: bool = movable.has(id)
-		if not guarded and not can_move:
+		var crowned: bool = pl.status == "CROWNED"
+		if not guarded and not can_move and not crowned:
 			continue
 		wanted[id] = true
 		var halo: MoveMarker = _halos.get(id)
@@ -288,6 +298,7 @@ func _rebuild_overlays() -> void:
 			_halo_layer.add_child(halo)
 			_halos[id] = halo
 		halo.safe_cell = guarded
+		halo.crowned = crowned
 		halo.movable = can_move
 		halo.selected = id == _selected_piece
 	for id in _halos.keys():

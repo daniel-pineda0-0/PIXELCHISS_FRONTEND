@@ -2,8 +2,9 @@ class_name MoveMarker
 extends Node2D
 ## Marcadores dibujados sobre el tablero (mundo):
 ##  - TARGET: destino de un movimiento legal, con el valor del dado.
-##  - HALO: aro bajo una ficha (azul = protegida, amarillo = se puede mover, blanco = elegida).
-##  - BURST: destello breve (captura).
+##  - HALO: aro bajo una ficha (azul = protegida, amarillo = se puede mover, blanco = elegida,
+##    dorado = coronada).
+##  - BURST: destello breve (captura en rojo, coronación en dorado).
 
 enum Kind { TARGET, HALO, BURST }
 
@@ -22,6 +23,10 @@ var movable := false:               # HALO: la ficha se puede mover ahora
 	set(value):
 		movable = value
 		queue_redraw()
+var crowned := false:               # HALO: ficha ya coronada (US-015)
+	set(value):
+		crowned = value
+		queue_redraw()
 var selected := false:              # HALO: es la ficha elegida
 	set(value):
 		selected = value
@@ -30,9 +35,10 @@ var selected := false:              # HALO: es la ficha elegida
 var _time := 0.0
 
 ## Destello que se expande y se apaga; se borra solo.
-static func burst(parent: Node, world_pos: Vector2) -> void:
+static func burst(parent: Node, world_pos: Vector2, tint := Color(1.0, 0.3, 0.3)) -> void:
 	var fx := MoveMarker.new()
 	fx.kind = Kind.BURST
+	fx.color = tint
 	parent.add_child(fx)
 	fx.global_position = world_pos
 	fx.scale = Vector2(0.4, 0.4)
@@ -58,7 +64,9 @@ func _draw() -> void:
 			draw_string(font, Vector2(-8, 5), label, HORIZONTAL_ALIGNMENT_CENTER, 16, 12, Color.WHITE)
 		Kind.HALO:
 			draw_set_transform(Vector2(0, 8), 0.0, Vector2(1.0, 0.45))    # aro aplastado a los pies
-			if safe_cell:
+			if crowned:
+				draw_arc(Vector2.ZERO, 15.0, 0.0, TAU, 32, Color(1.0, 0.85, 0.25, 0.95), 2.0)
+			elif safe_cell:
 				draw_arc(Vector2.ZERO, 15.0, 0.0, TAU, 32, Color(0.4, 0.8, 1.0, 0.9), 2.0)
 			if movable:
 				var alpha := 0.55 + 0.45 * sin(_time * 5.0)
@@ -67,4 +75,4 @@ func _draw() -> void:
 				draw_arc(Vector2.ZERO, 22.0, 0.0, TAU, 32, Color(1, 1, 1, 1), 3.0)
 		Kind.BURST:
 			draw_arc(Vector2.ZERO, 14.0, 0.0, TAU, 28, Color(1, 1, 1, 1), 3.0)
-			draw_circle(Vector2.ZERO, 8.0, Color(1.0, 0.3, 0.3, 0.8))
+			draw_circle(Vector2.ZERO, 8.0, Color(color, 0.8))

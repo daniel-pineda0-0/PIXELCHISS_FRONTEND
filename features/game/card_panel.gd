@@ -206,7 +206,7 @@ func _fill(card_id: String, title: String, desc: String, effect_code: String, pi
 	var tag := "BUFF" if buff else "NERF"
 	_kind.text = tag if pid == "" else "%s - %s" % [tag, GameText.who(pid)]
 	_kind.label_settings.font_color = BUFF_COLOR if buff else DEBUFF_COLOR
-	_title.text = title if title != "" else GameText.card_name(card_id)
+	_title.text = title if title != "" else GameText.card_title(card_id, effect_code)
 	_desc.text = desc if desc != "" else GameText.card_desc(card_id)
 	_desc.visible = _desc.text != ""
 	_timer.visible = false

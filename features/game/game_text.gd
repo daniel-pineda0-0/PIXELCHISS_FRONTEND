@@ -38,6 +38,19 @@ const CARDS := {
 	},
 }
 
+## Nombre de la carta según su efecto: se usa cuando el servidor no manda nombre y
+## el `cardId` no está en CARDS, para que el aviso nunca diga solo "Carta".
+const EFFECT_TITLES := {
+	"CAPTURE_NEAREST_CELL": "Matar al más cercano",
+	"CAPTURE_CHOSEN_CELL": "Matar a tu elección",
+	"MOVE_SAFE": "Avanzar a zona segura",
+	"SKIP_NEXT_TURN": "Turno perdido",
+	"LOSE_LEADING_PIECE": "Muerte súbita",
+	"DOUBLES_PENALTY": "Castigo de pares",
+	"DICE_MAX_LIMIT": "Dado limitado",
+	"CHOOSE_DICE": "Elige tus dados",
+}
+
 const DEBUFF_EFFECTS := ["SKIP_NEXT_TURN", "LOSE_LEADING_PIECE", "DOUBLES_PENALTY", "DICE_MAX_LIMIT"]
 
 ## Etiqueta corta para la tarjeta del jugador (`players[].effects`).
@@ -64,6 +77,14 @@ const DISCARD_TEXT := {
 
 static func card_name(card_id: String, fallback := "Carta") -> String:
 	return str(CARDS[card_id].name) if CARDS.has(card_id) else fallback
+
+## Nombre para mostrar: el de la carta, si no el de su efecto, si no "Carta".
+static func card_title(card_id: String, effect_code := "") -> String:
+	if CARDS.has(card_id):
+		return str(CARDS[card_id].name)
+	if EFFECT_TITLES.has(effect_code):
+		return str(EFFECT_TITLES[effect_code])
+	return "Carta"
 
 static func card_desc(card_id: String) -> String:
 	return str(CARDS[card_id].desc) if CARDS.has(card_id) else ""

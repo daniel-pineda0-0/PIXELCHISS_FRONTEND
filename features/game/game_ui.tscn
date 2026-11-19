@@ -150,8 +150,6 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 
 [node name="DiceSelector" parent="GameHUD" unique_id=1871614941 instance=ExtResource("7_g3kas")]
-visible = false
 layout_mode = 0
 
 [node name="TriviaUI" parent="." unique_id=51980602 instance=ExtResource("4_7rcnj")]
-visible = false

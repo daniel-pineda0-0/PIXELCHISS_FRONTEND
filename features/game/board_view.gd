@@ -27,13 +27,20 @@ const PIECE_SCENE := preload("res://features/game/ground_pice.tscn")
 const IDLE_ANIMATION := &"idl_ground_pice"
 const CHUNK_WIDTH := 32.0 * 17.0      # 17 columnas de 32 px (igual que player_ground.gd)
 const SHARED_CELL_SPACING := 8.0      # separación entre fichas que comparten casilla
-const CAMERA_TIME := 0.35
+const CAM_SMOOTH := 5.0               # qué tan rápido alcanza la cámara su objetivo (1/s); más alto = más rápida
+const PAN_SPEED := 420.0              # px/s al mover la cámara con las flechas o los botones
 ## Desplazamiento vertical de la cámara respecto al centro del chunk. Negativo = el
 ## mapa se ve más abajo. El suelo mide 5 filas (160 px) y el minimapa llega a y≈196:
 ## con -48 la fila del recorrido queda por debajo del minimapa. Ajustar aquí.
-const CAMERA_OFFSET_Y := -128.0
+const CAMERA_OFFSET_Y := -48.0
 const CLICK_RADIUS := 16.0            # qué tan cerca del centro hay que tocar una ficha o un destino
-const SLIDE_TIME := 0.28              # tiempo que tarda una ficha en deslizarse a su casilla nueva
+const SLIDE_TIME_PER_CELL := 0.22     # segundos por casilla que recorre una ficha
+const SLIDE_TIME_MIN := 0.6
+const SLIDE_TIME_MAX := 3.0
+const WALK_ANIMATION := &"walk_ground_pice"
+const ATTACK_ANIMATION := &"attack"
+const ATTACK_TIME := 0.7              # lo que dura la animación de ataque antes de volver a reposo
+const ATTACK_HIT := 0.4               # momento del ataque en que la víctima se va a casa
 
 const COLOR_CAPTURE := Color(1.0, 0.4, 0.4)
 const COLOR_CROWN := Color(1.0, 0.85, 0.25)
@@ -50,9 +57,13 @@ var _center_x := 0.0                  # x del centro de un chunk en el slot 0
 var _pieces_layer: Node2D
 var _pieces := {}                     # id de ficha -> Node2D
 var _placements := {}                 # id de ficha -> {chunk, cell, shift}
-var _focus_index := 0                 # slot enfocado, sin límite: izquierda/derecha lo restan/suman
+var _cam_target_x := 0.0              # x del mundo a la que se acerca la cámara (movimiento continuo)
+var _cam_y := 0.0
+var _pan_dir := 0                     # -1/0/1: botones de la interfaz mantenidos (las flechas se leen aparte)
+var _follow_piece := ""               # ficha que la cámara sigue mientras se desliza
+var _slide_end := {}                  # id de ficha -> segundo en que termina su deslizamiento
+var _pending_attack := {}             # id de atacante -> true: ataca al llegar a su casilla
 var _focused_once := false
-var _camera_tween: Tween
 
 var _halo_layer: Node2D               # aros bajo las fichas
 var _target_layer: Node2D             # destinos de la ficha elegida
@@ -109,13 +120,14 @@ func setup(world_node: Node2D) -> void:
 	_target_layer.z_index = 12       # sobre las fichas (un destino puede ser una casilla ocupada)
 	world.add_child(_target_layer)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if _chunks.is_empty():
 		return
 	var holding := RollHold.active()
 	if _was_holding and not holding:
 		_flush_pending()
 	_was_holding = holding
+	_update_camera(delta)
 	_update_chunks()
 	_place_pieces()
 
@@ -185,16 +197,24 @@ func refresh(state: Dictionary) -> void:
 	_update_chunks()
 	_place_pieces()
 
-## Mueve la vista al chunk contiguo: -1 izquierda, 1 derecha. Sin fin: da vueltas al anillo.
+## Botones de la interfaz: -1 mueve la cámara a la izquierda, 1 a la derecha, 0 la detiene.
+## Es un movimiento continuo mientras se mantiene pulsado (igual que las flechas).
 func step_focus(direction: int) -> void:
-	_focus_index += direction
-	_move_camera(true)
+	_pan_dir = direction
 
+## Lleva la cámara (con movimiento suave) al centro del chunk de ese asiento, en
+## la copia del anillo más cercana a la vista actual.
 func focus_seat(seat: int, animate := true) -> void:
+	if camera == null or not _chunks.has(seat):
+		return
 	var base := BoardMap.slot_of_seat(seat)
-	# La copia del chunk más cercana al enfoque actual, para no dar media vuelta al mundo.
-	_focus_index = base + BoardMap.SEATS * roundi((_focus_index - base) / float(BoardMap.SEATS))
-	_move_camera(animate)
+	var cam_slot := (camera.global_position.x - _center_x) / CHUNK_WIDTH
+	var slot := base + BoardMap.SEATS * roundi((cam_slot - base) / float(BoardMap.SEATS))
+	_follow_piece = ""
+	_cam_target_x = _slot_x(slot)
+	if not animate:
+		camera.global_position.x = _cam_target_x
+		_update_chunks()
 
 # --- Movimientos legales (Fase 2) --------------------------------------------------
 
@@ -212,14 +232,18 @@ func handle_events(events: Array, _version: int = 0) -> void:
 		var data: Dictionary = e.data if e.get("data") is Dictionary else {}
 		var piece_id := str(data.get("pieceId", ""))
 		match str(e.get("type", "")):
-			"PIECE_CAPTURED", "CARD_PIECE_RETURNED":
-				# El estado nuevo ya sacó la ficha del tablero: el destello va donde estaba.
-				# (CARD_PIECE_RETURNED: carta o castigo que la devolvió a casa, sin ficha atacante.)
-				var prev: Dictionary = _prev_placements.get(piece_id, {})
-				if prev.is_empty() or not _chunks.has(prev.chunk):
-					continue
-				MoveMarker.burst(_pieces_layer, _cell_world(prev.chunk, prev.cell) + Vector2(prev.shift, 0))
+			"PIECE_CAPTURED":
+				# El atacante camina hasta la casilla y ataca; la víctima espera ahí hasta el golpe.
+				var attacker := GameText.s(data.get("byPieceId"))
+				if attacker != "" and _pieces.has(attacker) and _prev_placements.has(piece_id):
+					_capture_sequence(piece_id, attacker)
+				else:
+					_burst_at_previous(piece_id)
+			"CARD_PIECE_RETURNED":
+				_burst_at_previous(piece_id)       # carta o castigo: no hay ficha atacante
 			"PIECE_MOVED":
+				if _slide.has(piece_id):
+					_follow_piece = piece_id           # la cámara sigue a cualquier ficha que se mueve
 				if str(data.get("status", "")) != "CROWNED":
 					continue
 				# Coronación (US-015): destello dorado en la corona, donde ya está la ficha.
@@ -227,6 +251,40 @@ func handle_events(events: Array, _version: int = 0) -> void:
 				if now.is_empty() or not _chunks.has(now.chunk):
 					continue
 				MoveMarker.burst(_pieces_layer, _cell_world(now.chunk, now.cell) + Vector2(now.shift, 0), COLOR_CROWN)
+
+## Destello donde estaba la ficha antes del último estado (ya salió del tablero).
+func _burst_at_previous(piece_id: String) -> void:
+	var prev: Dictionary = _prev_placements.get(piece_id, {})
+	if prev.is_empty() or not _chunks.has(prev.chunk):
+		return
+	MoveMarker.burst(_pieces_layer, _cell_world(prev.chunk, prev.cell) + Vector2(prev.shift, 0))
+
+## US-010: primero llega y ataca el atacante, y solo entonces la víctima salta y vuelve
+## a casa. El estado ya la mandó a casa, así que aquí se la mantiene en su casilla
+## (con un desfase fijo) hasta el momento del golpe.
+func _capture_sequence(victim: String, attacker: String) -> void:
+	var old: Dictionary = _prev_placements.get(victim, {})
+	var home: Dictionary = _placements.get(victim, {})
+	if old.is_empty() or home.is_empty() or not _chunks.has(old.chunk):
+		return
+	if _slide_tweens.has(victim):
+		(_slide_tweens[victim] as Tween).kill()
+		_slide_tweens.erase(victim)
+	_slide[victim] = _slide_offset(old, home)
+	_play_animation(victim, IDLE_ANIMATION)
+	var wait := 0.0
+	if _slide_end.has(attacker):
+		wait = maxf(0.0, float(_slide_end[attacker]) - _now())
+		_pending_attack[attacker] = true             # ataca apenas termine de caminar
+	else:
+		_attack(attacker)
+	get_tree().create_timer(wait + ATTACK_HIT).timeout.connect(_release_victim.bind(victim, old))
+
+func _release_victim(victim: String, old: Dictionary) -> void:
+	if not _pieces.has(victim) or not _placements.has(victim) or not _chunks.has(old.chunk):
+		return
+	MoveMarker.burst(_pieces_layer, _cell_world(old.chunk, old.cell) + Vector2(old.shift, 0))
+	_start_slide(victim, old, _placements[victim])
 
 ## Aplica lo que quedó en espera durante la animación de los dados: primero el
 ## estado (las fichas se deslizan), luego los eventos (destello de captura) y por
@@ -427,10 +485,10 @@ func _focus_card_targets(card_choices: Array) -> void:
 	_focused_card = card_id
 	if _selected_piece != "" or _targets.is_empty():
 		return                                             # con ficha elegida la cámara ya la sigue
-	var current_seat := BoardMap.seat_of_slot(posmod(_focus_index, BoardMap.SEATS))
+	var cam_x := camera.global_position.x if camera != null else 0.0
 	for target in _targets:
-		if target.chunk == current_seat:
-			return
+		if absf(_cell_world(target.chunk, target.cell).x - cam_x) < 280.0:
+			return                                         # ya hay una a la vista
 	focus_seat(int(_targets[0].chunk))
 
 ## Toque o clic en el mundo: primero un destino (envía el movimiento), si no una
@@ -466,20 +524,29 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # --- Deslizamiento de fichas -----------------------------------------------------------
 
-## La ficha aparece en su casilla nueva con un desfase hacia la vieja y lo va
-## apagando. Se aplica sobre la posición, así sigue funcionando con el mundo en bucle.
-func _start_slide(id: String, old: Dictionary, placement: Dictionary) -> void:
+## Desfase entre la casilla vieja y la nueva (por el camino corto del anillo).
+func _slide_offset(old: Dictionary, placement: Dictionary) -> Vector2:
 	var from_pos := _cell_world(old.chunk, old.cell) + Vector2(old.shift, 0)
 	var to_pos := _cell_world(placement.chunk, placement.cell) + Vector2(placement.shift, 0)
 	var offset := from_pos - to_pos
 	var ring := BoardMap.SEATS * CHUNK_WIDTH
-	offset.x = fposmod(offset.x + ring / 2.0, ring) - ring / 2.0   # el camino corto por el anillo
+	offset.x = fposmod(offset.x + ring / 2.0, ring) - ring / 2.0
+	return offset
+
+## La ficha aparece en su casilla nueva con un desfase hacia la vieja y lo va
+## apagando, caminando. Dura según la distancia. Se aplica sobre la posición, así
+## sigue funcionando con el mundo en bucle.
+func _start_slide(id: String, old: Dictionary, placement: Dictionary) -> void:
+	var offset := _slide_offset(old, placement)
+	var time := clampf(offset.length() / 32.0 * SLIDE_TIME_PER_CELL, SLIDE_TIME_MIN, SLIDE_TIME_MAX)
 	if _slide_tweens.has(id):
 		(_slide_tweens[id] as Tween).kill()
 	_slide[id] = offset
+	_slide_end[id] = _now() + time
+	_play_animation(id, WALK_ANIMATION)
 	var tween := create_tween()
-	tween.tween_method(_set_slide.bind(id, offset), 0.0, 1.0, SLIDE_TIME) \
-			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_method(_set_slide.bind(id, offset), 0.0, 1.0, time) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_callback(_end_slide.bind(id))
 	_slide_tweens[id] = tween
 
@@ -489,6 +556,35 @@ func _set_slide(t: float, id: String, offset: Vector2) -> void:
 func _end_slide(id: String) -> void:
 	_slide.erase(id)
 	_slide_tweens.erase(id)
+	_slide_end.erase(id)
+	if id == _follow_piece:                       # la cámara termina de asentarse en su casilla
+		_follow_piece = ""
+		var pl: Dictionary = _placements.get(id, {})
+		if not pl.is_empty() and _chunks.has(pl.chunk):
+			_cam_target_x = _cell_world(pl.chunk, pl.cell).x + float(pl.shift)
+	if _pending_attack.erase(id):
+		_attack(id)
+	else:
+		_play_animation(id, IDLE_ANIMATION)
+
+func _attack(id: String) -> void:
+	_play_animation(id, ATTACK_ANIMATION)
+	get_tree().create_timer(ATTACK_TIME).timeout.connect(_end_attack.bind(id))
+
+func _end_attack(id: String) -> void:
+	if not _slide_tweens.has(id):                 # si ya se está moviendo otra vez, sigue caminando
+		_play_animation(id, IDLE_ANIMATION)
+
+func _play_animation(id: String, animation: StringName) -> void:
+	var node: Variant = _pieces.get(id)
+	if node == null or not is_instance_valid(node):
+		return
+	var player := (node as Node).get_node_or_null("AnimationPlayer") as AnimationPlayer
+	if player != null and player.has_animation(animation):
+		player.play(animation)
+
+func _now() -> float:
+	return Time.get_ticks_msec() / 1000.0
 
 # --- Mundo en bucle ---------------------------------------------------------------
 
@@ -497,7 +593,7 @@ func _slot_x(slot: float) -> float:
 
 ## Coloca cada chunk en la copia del anillo más cercana a la cámara.
 func _update_chunks() -> void:
-	var cam_x := camera.global_position.x if camera != null else _slot_x(_focus_index)
+	var cam_x := camera.global_position.x if camera != null else _cam_target_x
 	var cam_slot := (cam_x - _center_x) / CHUNK_WIDTH
 	for seat in _chunks:
 		var base := BoardMap.slot_of_seat(seat)
@@ -529,25 +625,43 @@ func _focus_initial() -> void:
 	var mine: Dictionary = GameNet.player(GameNet.me)
 	if mine.has("seat"):
 		seat = int(mine.seat)
-	_focus_index = BoardMap.slot_of_seat(clampi(seat, 0, BoardMap.SEATS - 1))
-	_move_camera(false)
-
-func _move_camera(animate: bool) -> void:
-	if camera == null or _chunks.is_empty():
-		return
-	var seat := BoardMap.seat_of_slot(posmod(_focus_index, BoardMap.SEATS))
+	seat = clampi(seat, 0, BoardMap.SEATS - 1)
 	if not _chunks.has(seat):
-		return
-	var target := Vector2(_slot_x(_focus_index), _chunk_center(seat).y + CAMERA_OFFSET_Y)
-	if _camera_tween != null:
-		_camera_tween.kill()
-	if not animate:
-		camera.global_position = target
+		seat = int(_chunks.keys()[0])
+	_cam_y = _chunk_center(seat).y + CAMERA_OFFSET_Y
+	_cam_target_x = _slot_x(BoardMap.slot_of_seat(seat))
+	if camera != null:
+		camera.global_position = Vector2(_cam_target_x, _cam_y)
 		_update_chunks()
+
+## Flechas del teclado o botones de la interfaz.
+func _pan_input() -> int:
+	var dir := _pan_dir
+	if Input.is_action_pressed("ui_left"):
+		dir -= 1
+	if Input.is_action_pressed("ui_right"):
+		dir += 1
+	return clampi(dir, -1, 1)
+
+## Cámara continua: sigue a la ficha que se desliza o se acerca suave a su objetivo.
+## Si el jugador la mueve a mano, manda él hasta que haya otro motivo para moverla.
+func _update_camera(delta: float) -> void:
+	if camera == null or not _focused_once:
 		return
-	_camera_tween = create_tween()
-	_camera_tween.tween_property(camera, "global_position", target, CAMERA_TIME) \
-			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	var dir := _pan_input()
+	if dir != 0:
+		_follow_piece = ""
+		_cam_target_x = camera.global_position.x + dir * PAN_SPEED * delta
+		camera.global_position = Vector2(_cam_target_x, _cam_y)
+		return
+	if _follow_piece != "":
+		var node: Variant = _pieces.get(_follow_piece)
+		if node != null and is_instance_valid(node):
+			_cam_target_x = (node as Node2D).global_position.x
+	var t := 1.0 - exp(-CAM_SMOOTH * delta)
+	camera.global_position = Vector2(
+			lerpf(camera.global_position.x, _cam_target_x, t),
+			lerpf(camera.global_position.y, _cam_y, t))
 
 # --- Fichas y celdas ----------------------------------------------------------------
 

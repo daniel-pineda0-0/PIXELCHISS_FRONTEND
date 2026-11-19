@@ -5,6 +5,9 @@ extends Node2D
 var color := Color.WHITE:
 	set(value):
 		color = value
+		var sprite := get_node_or_null("Sprite2D") as Sprite2D    # ficha de game_pice.tscn
+		if sprite != null:
+			sprite.modulate = value
 		queue_redraw()
 
 func _draw() -> void:

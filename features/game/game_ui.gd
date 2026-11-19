@@ -4,14 +4,20 @@ extends CanvasLayer
 ## los chunks del tablero (game.gd los conecta a BoardView).
 ## Fase 3: contador de fichas coronadas por jugador (US-015) y pantalla de
 ## victoria para todos al terminar la partida (US-014).
+## Fase 4: avisos de las cartas (US-007 a US-009). La trivia vive en TriviaUI, el
+## panel de carta en CardPanel y los objetivos en BoardView; aquí se montan y se
+## atienden los avisos de efectos, capturas y salidas hechas por carta (US-010,
+## US-011, US-013, US-015) y las etiquetas de efectos en las tarjetas de jugador.
 ## Fase 2: turnos (US-006), dados, temporizador, botón de pasar y avisos de
 ## liberar (US-011), zona segura (US-013) y captura (US-010). Todo sale del estado y
 ## los eventos del servidor: aquí no se decide ninguna regla, solo se bloquean las
 ## acciones obvias fuera de turno y se muestra lo que responde el servidor.
 
-signal view_step(direction: int)    # -1 izquierda, 1 derecha
+signal view_step(direction: int)    # -1 izquierda, 1 derecha, 0 soltó el botón (la cámara se mueve mientras se mantiene)
 
 const SHARED_CELL_SPACING := 2.0
+const MINIMAP_PIECE := preload("res://features/game/game_pice.tscn")
+const HOVER_RADIUS := 6.0          # px del minimapa: qué tan cerca de una casilla hay que pasar para ver su letrero
 const LABEL_WHITE := preload("res://service/assets/ui/prefabs/PixelFontWhite.tres")
 const END_TURN_BUTTON := preload("res://features/lobby/join_button.tscn")
 const SEAT_NAMES := ["Rojo", "Azul", "Verde", "Amarillo"]
@@ -35,8 +41,16 @@ const ERROR_TEXT := {
 	"DIE_UNAVAILABLE": "Ese dado ya se usó",
 	"PENDING_CHALLENGE": "Hay un desafío pendiente",
 	"GAME_FINISHED": "La partida terminó",
+	"INVALID_CHALLENGE": "Ese desafío ya no está activo",
+	"CHALLENGE_EXPIRED": "Se acabó el tiempo",
+	"INVALID_ANSWER": "Respuesta no válida",
+	"INVALID_CARD_TARGET": "Ese objetivo no es válido",
 }
 
+var _minimap_panel: Control
+var _hover: PanelContainer         # letrero al pasar el ratón por una casilla del minimapa
+var _hover_label: Label
+var _hover_text := ""
 var _layer: Node2D                  # TileMapLayer del minimapa: las fichas van dentro, así comparten su transformación
 var _pieces_root: Node2D
 var _pieces := {}                   # id de ficha -> MinimapPiece
@@ -67,12 +81,14 @@ func _ready() -> void:
 	var minimap := find_child("MiniMap", true, false)
 	if minimap != null:
 		_layer = minimap.find_child("TileMapLayer", true, false) as Node2D
+	_minimap_panel = minimap as Control
 	var test_piece := find_child("GamePice", true, false)
 	if test_piece != null:
 		test_piece.queue_free()     # ficha de prueba de la escena
 	if _layer != null:
 		_pieces_root = Node2D.new()
 		_pieces_root.name = "MiniPieces"
+		_pieces_root.z_index = 10            # por encima de las casillas del minimapa
 		_layer.add_child(_pieces_root)
 	else:
 		push_warning("GameUI: no se encontró el TileMapLayer del minimapa")
@@ -80,11 +96,14 @@ func _ready() -> void:
 	var left := find_child("ButtonL", true, false) as Button
 	var right := find_child("ButtonR", true, false) as Button
 	if left != null:
-		left.pressed.connect(func(): view_step.emit(-1))
+		left.button_down.connect(func(): view_step.emit(-1))
+		left.button_up.connect(func(): view_step.emit(0))
 	if right != null:
-		right.pressed.connect(func(): view_step.emit(1))
+		right.button_down.connect(func(): view_step.emit(1))
+		right.button_up.connect(func(): view_step.emit(0))
 
 	_setup_turn_hud()
+	add_child(CardPanel.new())       # aviso y objetivo de las cartas (Fase 4)
 
 	GameNet.state_changed.connect(_on_state_changed)
 	GameNet.busy_changed.connect(func(_busy: bool): _refresh_turn(GameNet.state))
@@ -136,6 +155,7 @@ func _setup_turn_hud() -> void:
 	_build_turn_banner()
 	_build_end_turn_button()
 	_build_toast()
+	_build_hover()
 
 func _build_turn_banner() -> void:
 	var panel := PanelContainer.new()
@@ -244,6 +264,7 @@ func _refresh_turn(state: Dictionary) -> void:
 	if active_seat >= 0 and dice.size() == 2:
 		_last_dice[active_seat] = dice            # también cubre entrar a media partida
 	var crowned := _crowned_by_seat(state)
+	var effects := _effects_by_seat(state)
 
 	for seat in _cards:
 		var card: PlayerCardGame = _cards[seat]
@@ -252,6 +273,7 @@ func _refresh_turn(state: Dictionary) -> void:
 		# Cada tarjeta conserva la última tirada de su jugador; solo el del turno marca los dados gastados.
 		card.show_dice(_last_dice.get(seat, []), consumed if is_active else [])
 		card.set_crowned(int(crowned.get(seat, 0)))
+		card.set_effects(effects.get(seat, []))
 
 	if _dices != null:
 		var my_seat := int(GameNet.player(GameNet.me).get("seat", -1))
@@ -271,6 +293,15 @@ func _crowned_by_seat(state: Dictionary) -> Dictionary:
 			counts[seat] = int(counts.get(seat, 0)) + 1
 	return counts
 
+## Efectos activos por asiento (`players[].effects`).
+func _effects_by_seat(state: Dictionary) -> Dictionary:
+	var by_seat := {}
+	for p in state.get("players", []):
+		var list: Variant = p.get("effects")
+		if list is Array and not list.is_empty():
+			by_seat[int(p.get("seat", -1))] = list
+	return by_seat
+
 func _update_turn_label() -> void:
 	if _turn_label == null:
 		return
@@ -284,14 +315,20 @@ func _update_turn_label() -> void:
 	var active_id := str(turn.get("playerId", ""))
 	var text := ""
 	if active_id == GameNet.me:
-		if _has_challenge():
-			text = "Responde el desafío"
+		if GameNet.state.get("trivia") != null:
+			text = "Responde la trivia"
+		elif GameNet.state.get("card") != null:
+			text = "Elige un objetivo"
 		elif not bool(turn.get("rolled", false)):
 			text = "Tu turno: lanza"
 		elif GameNet.legal_moves.is_empty():
 			text = "Tu turno"
 		else:
 			text = "Mueve una ficha"
+	elif GameNet.state.get("trivia") != null:
+		text = "%s responde trivia" % _short_name(_player_name(active_id))
+	elif GameNet.state.get("card") != null:
+		text = "%s elige objetivo" % _short_name(_player_name(active_id))
 	else:
 		text = "Turno de " + _short_name(_player_name(active_id))
 	var seconds := _seconds_left()
@@ -326,6 +363,7 @@ func _process(delta: float) -> void:
 		var pulse := 0.65 + 0.35 * sin(Time.get_ticks_msec() / 1000.0 * 6.0)
 		_dices_panel.modulate = Color(1.0, 1.0, pulse) if _can_roll() else Color.WHITE
 	_tick_toast(delta)
+	_update_hover()
 
 # --- Acciones del jugador ---------------------------------------------------------------------
 
@@ -422,6 +460,16 @@ func _handle_event(e: Variant) -> void:
 			_on_piece_moved(data)
 		"PIECE_CAPTURED":
 			_on_piece_captured(data)
+		"CARD_PIECE_RETURNED":
+			_on_card_piece_returned(data)
+		"CARD_DISCARDED":
+			if data.get("cardId") == null:      # con cardId lo muestra CardPanel
+				_toast(GameText.discard_text(str(data.get("reason", ""))))
+		"EFFECT_CONSUMED":
+			_on_effect_consumed(data)
+		"EFFECT_EXPIRED":
+			if str(data.get("playerId", "")) == GameNet.me:
+				_toast("Terminó el efecto: " + GameText.effect_name(str(data.get("effectCode", ""))))
 		"GAME_FINISHED", "GAME_ABANDONED":
 			_schedule_result()
 
@@ -443,7 +491,8 @@ func _on_dice_rolled(data: Dictionary) -> void:
 
 func _on_piece_moved(data: Dictionary) -> void:
 	if data.get("cardId") != null:
-		return                                            # movimiento por carta: Fase 4
+		_on_card_piece_moved(data)
+		return
 	var owner_id := _owner_of_piece(str(data.get("pieceId", "")))
 	if str(data.get("status", "")) == "CROWNED":         # US-015
 		_toast("¡Ficha coronada!" if owner_id == GameNet.me \
@@ -459,8 +508,10 @@ func _on_piece_moved(data: Dictionary) -> void:
 
 func _on_piece_captured(data: Dictionary) -> void:
 	var victim := _owner_of_piece(str(data.get("pieceId", "")))
-	var killer := _owner_of_piece(str(data.get("byPieceId", "")))
-	if victim == GameNet.me:                              # US-010 esc. 4: avisar al afectado
+	var killer := _owner_of_piece(GameText.s(data.get("byPieceId")))
+	if data.get("cardId") != null and killer == "":        # US-010 esc. 3: captura hecha por una carta
+		_on_card_piece_returned({"playerId": victim})
+	elif victim == GameNet.me:                            # US-010 esc. 4: avisar al afectado
 		_toast("¡Te capturaron una ficha!", true)
 		_flash_screen()
 	elif killer == GameNet.me:
@@ -468,6 +519,35 @@ func _on_piece_captured(data: Dictionary) -> void:
 	else:
 		_toast("%s capturó una ficha de %s" % [
 				_short_name(_player_name(killer)), _short_name(_player_name(victim))])
+
+## Una carta movió una ficha: salir de la cárcel (US-011 esc. 2), a zona segura
+## (US-013 esc. 3) o a la meta (US-015 esc. 2).
+func _on_card_piece_moved(data: Dictionary) -> void:
+	var owner_id := _owner_of_piece(str(data.get("pieceId", "")))
+	var who := "Tu ficha" if owner_id == GameNet.me else "Una ficha de %s" % _short_name(_player_name(owner_id))
+	if str(data.get("status", "")) == "CROWNED":
+		_toast("%s llegó a la meta por carta" % who)
+	elif data.get("from") == null:
+		_toast("%s salió de la cárcel por carta" % who)
+	elif data.get("to") != null and Board.is_safe(int(data.get("to"))):
+		_toast("%s avanzó a zona segura" % who)
+	else:
+		_toast("%s avanzó por carta" % who)
+
+## Una ficha volvió a casa sin ficha atacante (carta de matar o castigo): avisa al afectado (US-010 esc. 4).
+func _on_card_piece_returned(data: Dictionary) -> void:
+	var victim := str(data.get("playerId", ""))
+	if victim == GameNet.me:
+		_toast("¡Una carta te devolvió una ficha a casa!", true)
+		_flash_screen()
+	else:
+		_toast("Una carta devolvió una ficha de %s a casa" % _short_name(_player_name(victim)))
+
+## Un efecto de turno se gastó (p. ej. turno perdido); el siguiente TURN_CHANGED ya viene en el lote.
+func _on_effect_consumed(data: Dictionary) -> void:
+	var who := str(data.get("playerId", ""))
+	if str(data.get("effectCode", "")) == "SKIP_NEXT_TURN":
+		_toast("Pierdes este turno" if who == GameNet.me else "%s pierde su turno" % _short_name(_player_name(who)))
 
 ## Mensajes en cola para que varios eventos de la misma jugada no se pisen.
 ## `urgent` descarta lo pendiente y se muestra al momento (errores, captura propia).
@@ -591,15 +671,7 @@ func _on_result_back() -> void:
 
 ## Game solo conoce ids; los nombres vienen de la sala (Lobby.data) si aún está.
 func _player_name(pid: String) -> String:
-	for entry in Lobby.data.get("players", []):
-		if str(entry.get("user_id", "")) == pid:
-			var shown := str(entry.get("display_name", ""))
-			if shown != "":
-				return shown
-	var seat := int(GameNet.player(pid).get("seat", -1))
-	if seat >= 0 and seat < SEAT_NAMES.size():
-		return SEAT_NAMES[seat]
-	return "Jugador"
+	return GameText.player_name(pid)
 
 func _short_name(full_name: String) -> String:
 	return full_name if full_name.length() <= 10 else full_name.substr(0, 10)
@@ -614,6 +686,76 @@ func _owner_of_piece(piece_id: String) -> String:
 		if int(p.get("seat", -1)) == seat:
 			return str(p.get("id", ""))
 	return ""
+
+# --- Letrero del minimapa -------------------------------------------------------------------
+
+func _build_hover() -> void:
+	_hover = PanelContainer.new()
+	_hover.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hover.visible = false
+	_hud.add_child(_hover)
+	_hover_label = Label.new()
+	_hover_label.label_settings = LABEL_WHITE.duplicate() as LabelSettings
+	_hover_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hover.add_child(_hover_label)
+
+## Si el ratón pasa cerca de una casilla del minimapa, muestra qué casilla es, de qué
+## tipo (carta, zona segura, corredor, corona) y qué fichas hay en ella.
+func _update_hover() -> void:
+	if _hover == null or _layer == null or _minimap_panel == null:
+		return
+	var mouse := get_viewport().get_mouse_position()
+	if not _minimap_panel.is_visible_in_tree() or not _minimap_panel.get_global_rect().has_point(mouse):
+		_hover.visible = false
+		return
+	var local := _layer.get_local_mouse_position()
+	var best := -1
+	var best_distance := HOVER_RADIUS
+	for id in BoardMap.CELL_COUNT:
+		var distance :float= _layer.map_to_local(BoardMap.minimap_cell(id)).distance_to(local)
+		if distance <= best_distance:
+			best = id
+			best_distance = distance
+	if best < 0:
+		_hover.visible = false
+		return
+	var text := _cell_info(best)
+	if text != _hover_text:
+		_hover_text = text
+		_hover_label.text = text
+		_hover.reset_size()
+	_hover.visible = true
+	var limit := get_viewport().get_visible_rect().size - _hover.size
+	_hover.position = Vector2(minf(mouse.x + 12.0, limit.x), minf(mouse.y + 12.0, limit.y))
+
+func _cell_info(id: int) -> String:
+	var lines := PackedStringArray(["Casilla %d" % id])
+	var kind := str(Board.cell(id).get("kind", ""))
+	if Board.trivia_ids.has(id):
+		lines.append("Casilla de carta")
+	elif Board.is_safe(id):
+		lines.append("Zona segura")
+	elif kind == Board.KIND_CROWN:
+		lines.append("Corona")
+	elif kind == Board.KIND_FINISH_LANE:
+		lines.append("Corredor final")
+	else:
+		lines.append("Casilla común")
+	var counts := {}
+	for p in GameNet.state.get("pieces", []):
+		var seat := BoardMap.seat_of_piece(p)
+		if seat >= 0 and BoardMap.piece_cell_id(p, seat) == id:
+			counts[seat] = int(counts.get(seat, 0)) + 1
+	if counts.is_empty():
+		lines.append("Sin fichas")
+	else:
+		var total := 0
+		var parts := PackedStringArray()
+		for seat in counts:
+			total += int(counts[seat])
+			parts.append("%s x%d" % [SEAT_NAMES[posmod(int(seat), SEAT_NAMES.size())], int(counts[seat])])
+		lines.append("Fichas: %d (%s)" % [total, ", ".join(parts)])
+	return "\n".join(lines)
 
 # --- Minimapa (Fase 1) -----------------------------------------------------------------------------
 
@@ -659,7 +801,7 @@ func _refresh_minimap(state: Dictionary) -> void:
 func _piece_node(id: String, seat: int) -> MinimapPiece:
 	if _pieces.has(id):
 		return _pieces[id]
-	var node := MinimapPiece.new()
+	var node := MINIMAP_PIECE.instantiate() as MinimapPiece
 	node.name = id
 	node.color = BoardMap.SEAT_COLORS[posmod(seat, BoardMap.SEATS)]
 	_pieces_root.add_child(node)

@@ -7,13 +7,15 @@ extends Node
 ##   GameNet.state_changed.connect(...)     # estado nuevo -> redibujar
 ##   GameNet.events_received.connect(...)   # eventos -> animar (una vez por versión)
 ##   GameNet.join(GameState.game_id)
-##   GameNet.roll() / move(m) / answer_trivia(i) / pick_card(c) / end_turn()
+##   GameNet.roll() / confirm_animation() / move(m) / crown(id) / answer_trivia(i)
+##   GameNet.pick_card(c) / end_turn()
 ##
 ## Lo que resuelve por su cuenta (guía §8 y §9):
 ## - aplica un estado solo si su `version` >= la local;
 ## - deduplica eventos por versión (llegan en ACK y en GAME_UPDATED);
 ## - una sola acción en vuelo (`busy`), con requestId único y expectedVersion;
-## - pide `legalMoves` (SYNC_REQUEST) cuando es tu turno y ya lanzaste;
+## - pide `legalMoves` (SYNC_REQUEST) cuando es tu turno, ya lanzaste y confirmaste
+##   la animación de los dados (reglas v4-100: sin confirmar no hay movimientos);
 ## - se resincroniza ante STALE_VERSION y huecos de versión;
 ## - renueva el JWT a los ~12 min abriendo un segundo socket (sin ventana de
 ##   desconexión) y reconecta con backoff si el socket se cae.
@@ -38,8 +40,8 @@ const RECONNECT_DELAYS := [0.5, 1.0, 2.0, 4.0]
 const RECONNECT_GIVE_UP := 90.0          # el servidor retira al jugador a los 60 s
 const INBOUND_BUFFER := 262144
 
-const SYNC_ERRORS := ["STALE_VERSION", "CONCURRENT_UPDATE", "NOT_YOUR_TURN",
-		"TURN_EXPIRED", "SERVICE_UNAVAILABLE"]
+const SYNC_ERRORS := ["STALE_VERSION", "STALE_ROLL", "CONCURRENT_UPDATE", "NOT_YOUR_TURN",
+		"TURN_EXPIRED", "ANIMATION_PENDING", "SERVICE_UNAVAILABLE"]
 const TOKEN_ERRORS := ["TOKEN_EXPIRED", "INVALID_TOKEN"]
 const NO_SYNC_ERRORS := ["UNAUTHENTICATED", "JOIN_REQUIRED", "ALREADY_JOINED",
 		"INVALID_JSON", "UNKNOWN_ACTION", "INVALID_ACTION", "AUTH_TIMEOUT"]
@@ -135,7 +137,20 @@ func roll(chosen_dice: Array = []) -> bool:
 		extra["chosenDice"] = chosen_dice.map(func(d): return int(d))
 	return _act("ROLL_DICE", extra)
 
-## `m` es un elemento de `legal_moves`; se copia tal cual, no se calcula nada.
+## Confirma que terminó la animación de TU tirada: arranca el reloj de movimiento (30 s).
+## Se manda dentro de los 10 s siguientes a la tirada. `challengeId` es `turn.rollId`.
+func confirm_animation() -> bool:
+	var roll_id: Variant = _dict(state, "turn").get("rollId")
+	if roll_id == null:
+		return false
+	return _act("DICE_ANIMATION_COMPLETED", {"challengeId": str(roll_id)})
+
+## Tres pares seguidos: corona una ficha propia de `turn.crownEligible`.
+func crown(piece_id: String) -> bool:
+	return _act("CROWN_REQUEST", {"pieceId": piece_id})
+
+## `m` es un elemento de `legal_moves` (dieIndex 0, 1 o 2 = suma de ambos dados); se copia
+## tal cual, no se calcula nada. Salir de casa ya no es un movimiento: lo hace el servidor.
 func move(m: Dictionary) -> bool:
 	return _act("MOVE_REQUEST", {
 		"pieceId": m.get("pieceId"),
@@ -184,6 +199,35 @@ func _send_sync() -> void:
 
 func is_my_turn() -> bool:
 	return state.get("status") == "ACTIVE" and str(_dict(state, "turn").get("playerId", "")) == me
+
+# --- Fase del turno (se lee del estado, no de los eventos: sobrevive a reconexiones) ---
+
+func _turn() -> Dictionary:
+	return _dict(state, "turn")
+
+## NONE (sin tirada vigente), WAITING (esperando confirmación), COMPLETED (movimiento en
+## curso) o EXPIRED.
+func animation_status() -> String:
+	return str(_turn().get("animationStatus", "NONE"))
+
+## Es tu turno y falta confirmar la animación de tu tirada.
+func awaiting_animation_confirmation() -> bool:
+	var turn := _turn()
+	return is_my_turn() and bool(turn.get("rolled", false)) and turn.get("rollId") != null \
+			and animation_status() == "WAITING"
+
+## Es tu turno y debes elegir la ficha a coronar (tres pares seguidos).
+func crown_choice_pending() -> bool:
+	return is_my_turn() and bool(_turn().get("crownChoiceRequired", false)) \
+			and animation_status() == "COMPLETED"
+
+## ¿Tiene sentido pedir `legalMoves`? Solo con la animación confirmada, sin elección de
+## corona pendiente y sin trivia ni carta (el servidor los manda vacíos en esos casos).
+func wants_legal_moves() -> bool:
+	return is_my_turn() and bool(_turn().get("rolled", false)) \
+			and animation_status() == "COMPLETED" \
+			and not bool(_turn().get("crownChoiceRequired", false)) \
+			and state.get("trivia") == null and state.get("card") == null
 
 ## Datos de un jugador del snapshot ({} si no está).
 func player(player_id: String) -> Dictionary:
@@ -484,14 +528,9 @@ func _clear_legal() -> void:
 	legal_moves_changed.emit(legal_moves)
 
 ## `legalMoves` solo viaja en GAME_STATE: se piden con SYNC_REQUEST cuando
-## es tu turno, ya lanzaste y no hay trivia ni carta pendiente.
+## wants_legal_moves() (tirada confirmada, sin corona pendiente, trivia ni carta).
 func _maybe_request_legal_moves() -> void:
-	if state.is_empty() or state.get("status") != "ACTIVE" or not is_my_turn():
-		return
-	var turn := _dict(state, "turn")
-	if not bool(turn.get("rolled", false)):
-		return
-	if state.get("trivia") != null or state.get("card") != null:
+	if state.is_empty() or state.get("status") != "ACTIVE" or not wants_legal_moves():
 		return
 	var v := int(state.get("version", -1))
 	if _legal_version == v or _sync_asked_version == v:

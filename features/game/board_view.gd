@@ -47,6 +47,7 @@ const COLOR_CROWN := Color(1.0, 0.85, 0.25)
 const COLOR_RELEASE := Color(0.45, 1.0, 0.55)
 const COLOR_SAFE := Color(0.4, 0.8, 1.0)
 const COLOR_PLAIN := Color(1.0, 1.0, 1.0)
+const COLOR_BLOW := Color(1.0, 0.6, 0.2)   # SOPLAR: ficha devuelta a casa por no capturar
 
 var world: Node2D
 var camera: Camera2D
@@ -72,6 +73,9 @@ var _targets: Array = []              # MoveMarker (TARGET) de la ficha elegida
 var _selected_piece := ""
 var _focused_piece := ""              # última ficha a la que se llevó la cámara
 var _focused_card := ""               # último desafío de carta al que se llevó la cámara
+var _last_moved_piece := ""           # última ficha propia que se movió (o salió de casa): a ella vuelve la cámara en tu turno
+var _crown_ids: Array = []            # fichas que se pueden coronar ahora (tres pares seguidos)
+var _focused_crown := ""
 var _prev_placements := {}            # colocación de las fichas antes del último refresh()
 var _slide := {}                      # id de ficha -> desfase que se va apagando (animación)
 var _slide_tweens := {}
@@ -135,6 +139,7 @@ func _process(delta: float) -> void:
 func refresh(state: Dictionary) -> void:
 	if _pieces_layer == null or _chunks.is_empty():
 		return
+	RollHold.observe(state)               # una tirada nueva pausa el dibujo hasta que paren los dados
 	if RollHold.active():
 		_pending_state = state            # se dibuja al terminar la animación de los dados
 		return
@@ -244,20 +249,66 @@ func handle_events(events: Array, _version: int = 0) -> void:
 			"PIECE_MOVED":
 				if _slide.has(piece_id):
 					_follow_piece = piece_id           # la cámara sigue a cualquier ficha que se mueve
-				if str(data.get("status", "")) != "CROWNED":
-					continue
-				# Coronación (US-015): destello dorado en la corona, donde ya está la ficha.
-				var now: Dictionary = _placements.get(piece_id, {})
-				if now.is_empty() or not _chunks.has(now.chunk):
-					continue
-				MoveMarker.burst(_pieces_layer, _cell_world(now.chunk, now.cell) + Vector2(now.shift, 0), COLOR_CROWN)
+				if data.get("cardId") == null and _is_mine(piece_id):
+					_last_moved_piece = piece_id       # a esta vuelve la cámara cuando te toque
+				if str(data.get("status", "")) == "CROWNED":
+					_burst_crown(piece_id)             # coronación (US-015)
+			"PIECE_RELEASED":
+				# Salida automática con par (v4-100): la ficha ya está en la salida y se desliza desde casa.
+				if _slide.has(piece_id):
+					_follow_piece = piece_id
+				if _is_mine(piece_id):
+					_last_moved_piece = piece_id
+			"PIECE_CROWNED":
+				_burst_crown(piece_id)                 # coronación elegida con tres pares
+			"PIECE_BLOWN":
+				_burst_at_previous(piece_id, COLOR_BLOW)   # SOPLAR: no capturaste y la ficha vuelve a casa
+			"TURN_CHANGED":
+				if str(data.get("playerId", "")) == GameNet.me:
+					_focus_last_moved()
 
 ## Destello donde estaba la ficha antes del último estado (ya salió del tablero).
-func _burst_at_previous(piece_id: String) -> void:
+func _burst_at_previous(piece_id: String, tint := Color(1.0, 0.3, 0.3)) -> void:
 	var prev: Dictionary = _prev_placements.get(piece_id, {})
 	if prev.is_empty() or not _chunks.has(prev.chunk):
 		return
-	MoveMarker.burst(_pieces_layer, _cell_world(prev.chunk, prev.cell) + Vector2(prev.shift, 0))
+	MoveMarker.burst(_pieces_layer, _cell_world(prev.chunk, prev.cell) + Vector2(prev.shift, 0), tint)
+
+## Destello dorado en la corona, donde ya está la ficha.
+func _burst_crown(piece_id: String) -> void:
+	var now: Dictionary = _placements.get(piece_id, {})
+	if now.is_empty() or not _chunks.has(now.chunk):
+		return
+	MoveMarker.burst(_pieces_layer, _cell_world(now.chunk, now.cell) + Vector2(now.shift, 0), COLOR_CROWN)
+
+## ¿La ficha es del jugador local? (id "seat-{asiento}-piece-{n}")
+func _is_mine(piece_id: String) -> bool:
+	var parts := piece_id.split("-")
+	if parts.size() < 4 or parts[0] != "seat":
+		return false
+	return int(parts[1]) == int(GameNet.player(GameNet.me).get("seat", -2))
+
+## Al empezar tu turno la cámara vuelve a la última ficha que moviste. Si otras fichas
+## aún se están deslizando (la jugada que acaba de terminar), espera a que se asienten.
+func _focus_last_moved() -> void:
+	if _last_moved_piece == "" or not _placements.has(_last_moved_piece):
+		return
+	var wait := 0.0
+	for id in _slide_end:
+		wait = maxf(wait, float(_slide_end[id]) - _now())
+	if wait > 0.05:
+		get_tree().create_timer(wait + 0.15).timeout.connect(_focus_piece.bind(_last_moved_piece))
+	else:
+		_focus_piece(_last_moved_piece)
+
+func _focus_piece(piece_id: String) -> void:
+	if not GameNet.is_my_turn():                 # si el turno ya pasó mientras esperaba, no se mueve nada
+		return
+	var pl: Dictionary = _placements.get(piece_id, {})
+	if pl.is_empty() or not _chunks.has(pl.chunk):
+		return
+	_follow_piece = ""
+	_cam_target_x = _cell_world(pl.chunk, pl.cell).x + float(pl.shift)
 
 ## US-010: primero llega y ataca el atacante, y solo entonces la víctima salta y vuelve
 ## a casa. El estado ya la mandó a casa, así que aquí se la mantiene en su casilla
@@ -347,6 +398,9 @@ func _rebuild_overlays() -> void:
 		var choice_piece := GameText.s(c.get("pieceId"))
 		if choice_piece != "" and _choice_cell(c) >= 0:
 			movable[choice_piece] = true                    # carta que mueve una ficha propia: se elige primero
+	_crown_ids = _crown_candidates()
+	for crown_id in _crown_ids:
+		movable[crown_id] = true                            # tres pares: se toca la ficha a coronar
 	if not movable.has(_selected_piece):
 		_selected_piece = ""
 	if _selected_piece == "" and movable.size() == 1:
@@ -392,7 +446,7 @@ func _rebuild_overlays() -> void:
 				continue
 			var target := MoveMarker.new()
 			target.kind = MoveMarker.Kind.TARGET
-			target.label = str(die_value)
+			target.label = _move_label(m)
 			target.color = _move_color(m)
 			target.move = m
 			target.chunk = int(placed.seat)
@@ -408,7 +462,41 @@ func _rebuild_overlays() -> void:
 		if _selected_piece != "" and _placements.has(_selected_piece):
 			focus_seat(int(_placements[_selected_piece].chunk))
 	_focus_card_targets(card_choices)
+	if _crown_ids.is_empty():
+		_focused_crown = ""
+	elif _focused_crown == "":
+		_focused_crown = str(_crown_ids[0])                 # la cámara va a la primera candidata
+		var first: Dictionary = _placements.get(_focused_crown, {})
+		if not first.is_empty():
+			focus_seat(int(first.chunk))
 	_place_pieces()
+
+## Texto del destino: el valor del dado, o "4+2" cuando el movimiento usa la suma de
+## los dos dados (`dieIndex` 2).
+func _move_label(m: Dictionary) -> String:
+	var die_value := int(m.get("dieValue", 0))
+	if int(m.get("dieIndex", 0)) != 2:
+		return str(die_value)
+	var turn: Variant = GameNet.state.get("turn")
+	var dice: Variant = turn.get("dice") if turn is Dictionary else null
+	if dice is Array and dice.size() == 2:
+		return "%d+%d" % [int(dice[0]), int(dice[1])]
+	return str(die_value)
+
+## Tres pares seguidos (`turn.crownChoiceRequired`): fichas propias en el tablero entre
+## las que el servidor permite coronar. Vacío fuera de ese caso.
+func _crown_candidates() -> Array:
+	if RollHold.active() or GameNet.busy or not GameNet.crown_choice_pending():
+		return []
+	var turn: Variant = GameNet.state.get("turn")
+	var eligible: Variant = turn.get("crownEligible") if turn is Dictionary else null
+	var out: Array = []
+	if eligible is Array:
+		for id in eligible:
+			var pl: Dictionary = _placements.get(str(id), {})
+			if not pl.is_empty() and pl.status == "BOARD":
+				out.append(str(id))
+	return out
 
 # --- Objetivos de carta (Fase 4) ---------------------------------------------------------
 
@@ -519,6 +607,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			best_distance = distance
 	if best != "":
 		get_viewport().set_input_as_handled()
+		if _crown_ids.has(best):
+			GameNet.crown(best)                   # CROWN_REQUEST: no hay destinos que elegir
+			return
 		_selected_piece = best
 		_rebuild_overlays()
 

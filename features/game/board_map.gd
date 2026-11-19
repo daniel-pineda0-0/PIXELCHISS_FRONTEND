@@ -1,11 +1,11 @@
 class_name BoardMap
 extends RefCounted
-## Traduce los ids de casilla del servidor (0-99, tablero v3-100) a celdas de los
+## Traduce los ids de casilla del servidor (0-99, tablero v4-100) a celdas de los
 ## dos dibujos del tablero: la franja del mundo (un chunk por asiento) y el minimapa.
 ## Solo datos y cuentas. Para saber en qué casilla está una ficha: piece_cell_id().
 ##
-## Ids: 0-67 recorrido (sector de 17 por asiento; la salida del asiento es 17*asiento,
-## y es también donde acaba la vuelta). 68-99 corredores (8 por asiento, la corona es
+## Ids: 0-67 recorrido (sector de 17 por asiento; la salida del asiento es 17*asiento+5,
+## y es también donde acaba la vuelta; el inicio del sector, 17*asiento, es un seguro normal). 68-99 corredores (8 por asiento, la corona es
 ## el último). Las casas no son casillas: una ficha HOME se dibuja en minimap_home() o
 ## en la celda de PrisonCell de su chunk.
 

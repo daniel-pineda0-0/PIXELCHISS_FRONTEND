@@ -2,6 +2,9 @@ extends CanvasLayer
 ## HUD de la partida.
 ## US-020: minimapa con las fichas de todos los jugadores y botones para recorrer
 ## los chunks del tablero (game.gd los conecta a BoardView).
+## Reglas v4-100: confirma sola la animación de tus dados (si no, el servidor no abre el
+## movimiento), muestra el reloj de cada fase (lanzar 60 s, confirmar 10 s, mover 30 s),
+## los intentos de salida, la suma de dados, SOPLAR y la coronación con tres pares.
 ## Fase 3: contador de fichas coronadas por jugador (US-015) y pantalla de
 ## victoria para todos al terminar la partida (US-014).
 ## Fase 4: avisos de las cartas (US-007 a US-009). La trivia vive en TriviaUI, el
@@ -34,7 +37,12 @@ const ERROR_TEXT := {
 	"TURN_EXPIRED": "Se acabó el tiempo del turno",
 	"ALREADY_ROLLED": "Ya lanzaste los dados",
 	"ROLL_REQUIRED": "Primero lanza los dados",
-	"DOUBLES_REQUIRED": "Necesitas pares para sacar una ficha",
+	"ANIMATION_PENDING": "Espera a que terminen los dados",
+	"STALE_ROLL": "Esa tirada ya no está vigente",
+	"CROWN_CHOICE_REQUIRED": "Primero elige qué ficha coronar",
+	"NO_CROWN_CHOICE": "No hay coronación pendiente",
+	"INVALID_CROWN_PIECE": "Esa ficha no se puede coronar",
+	"HOME_RELEASE_AUTOMATIC": "Las fichas salen solas al sacar pares",
 	"CELL_FULL": "Esa casilla está llena",
 	"OVERSHOOT": "Necesitas el número exacto para coronar",
 	"CROWNED_PIECE": "Esa ficha ya está coronada",
@@ -69,8 +77,9 @@ var _flash: ColorRect
 var _toast_queue: Array[String] = []
 var _toast_left := 0.0
 var _tick := 0.0
-var _prev_turn_player := ""
-var _exit_warned_version := -1
+var _confirmed_roll := ""           # rollId cuya animación ya confirmé
+var _confirm_tries := {}            # rollId -> intentos de confirmación (para no reintentar sin fin)
+var _end_armed_version := -1         # versión en la que ya avisé "puedes capturar" antes de pasar
 var _result_scheduled := false
 var _result_panel: Control
 var _last_dice := {}                # asiento -> últimos dados que sacó (se conservan entre turnos)
@@ -119,6 +128,7 @@ func _exit_tree() -> void:
 ## Mientras ruedan los dados no se redibuja nada: al terminar, _process aplica el
 ## último estado (ver RollHold).
 func _on_state_changed(state: Dictionary) -> void:
+	RollHold.observe(state)           # una tirada nueva pausa el redibujo hasta que paren los dados
 	if RollHold.active():
 		return
 	_refresh_minimap(state)
@@ -179,7 +189,7 @@ func _build_end_turn_button() -> void:
 	_end_button.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_end_button.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	_end_button.set_text("Pasar")
-	_end_button.tooltip_text = "Termina tu turno (pierdes el turno extra por pares)"
+	_end_button.tooltip_text = "Termina tu turno (pierdes la tirada extra por pares)"
 	_end_button.focus_mode = Control.FOCUS_NONE
 	_end_button.visible = false
 	_end_button.pressed.connect(_on_end_turn_pressed)
@@ -248,8 +258,24 @@ func _can_roll() -> bool:
 			and not _has_challenge() and not GameNet.busy and not RollHold.active()
 
 func _can_end_turn() -> bool:
+	# END_TURN exige tirada confirmada y ninguna elección de corona pendiente (guía §6.7).
 	return _is_playing() and GameNet.is_my_turn() and bool(_turn().get("rolled", false)) \
+			and GameNet.animation_status() == "COMPLETED" \
+			and not bool(_turn().get("crownChoiceRequired", false)) \
 			and not _has_challenge() and not GameNet.busy and not RollHold.active()
+
+## ¿Tengo alguna ficha en el tablero? Sin ellas, cada tirada sin par es un intento de salida.
+func _has_board_piece(pid: String) -> bool:
+	for piece in GameNet.state.get("pieces", []):
+		if str(piece.get("ownerId", "")) == pid and str(piece.get("status", "")) == "BOARD":
+			return true
+	return false
+
+func _has_home_piece(pid: String) -> bool:
+	for piece in GameNet.state.get("pieces", []):
+		if str(piece.get("ownerId", "")) == pid and BoardMap.is_home(piece):
+			return true
+	return false
 
 func _refresh_turn(state: Dictionary) -> void:
 	if _hud == null or state.is_empty() or RollHold.active():
@@ -313,25 +339,36 @@ func _update_turn_label() -> void:
 		return
 	var turn := _turn()
 	var active_id := str(turn.get("playerId", ""))
+	var mine := active_id == GameNet.me
+	var who := _short_name(_player_name(active_id))
+	var rolled := bool(turn.get("rolled", false))
+	var choosing_crown := bool(turn.get("crownChoiceRequired", false))
+	# `turn.deadline` cambia de significado según la fase (guía §5.1): con la animación en
+	# espera no hay cuenta regresiva de movimiento, solo "dados".
+	var show_clock := true
 	var text := ""
-	if active_id == GameNet.me:
-		if GameNet.state.get("trivia") != null:
-			text = "Responde la trivia"
-		elif GameNet.state.get("card") != null:
-			text = "Elige un objetivo"
-		elif not bool(turn.get("rolled", false)):
+	if GameNet.state.get("trivia") != null:
+		text = "Responde la trivia" if mine else "%s responde trivia" % who
+	elif GameNet.state.get("card") != null:
+		text = "Elige un objetivo" if mine else "%s elige objetivo" % who
+	elif rolled and GameNet.animation_status() == "WAITING":
+		text = "Tus dados..." if mine else "Dados de %s" % who
+		show_clock = false
+	elif choosing_crown:
+		text = "Tres pares: elige qué coronar" if mine else "%s elige qué coronar" % who
+	elif mine:
+		if not rolled:
 			text = "Tu turno: lanza"
+			if not _has_board_piece(GameNet.me) and _has_home_piece(GameNet.me):
+				var attempt := clampi(int(turn.get("homeAttempts", 0)) + 1, 1, 3)
+				text += " (%d/3)" % attempt            # tres intentos para sacar par sin fichas en juego
 		elif GameNet.legal_moves.is_empty():
 			text = "Tu turno"
 		else:
 			text = "Mueve una ficha"
-	elif GameNet.state.get("trivia") != null:
-		text = "%s responde trivia" % _short_name(_player_name(active_id))
-	elif GameNet.state.get("card") != null:
-		text = "%s elige objetivo" % _short_name(_player_name(active_id))
 	else:
-		text = "Turno de " + _short_name(_player_name(active_id))
-	var seconds := _seconds_left()
+		text = "Turno de " + who
+	var seconds := _seconds_left() if show_clock else -1
 	if seconds >= 0:
 		text += "  %ds" % seconds
 	_turn_label.text = text
@@ -355,6 +392,7 @@ func _process(delta: float) -> void:
 	_was_holding = holding
 	if not holding:
 		_drain_events()
+		_auto_confirm_animation()
 	_tick -= delta
 	if _tick <= 0.0:
 		_tick = 0.2
@@ -387,73 +425,111 @@ func _on_roll_pressed() -> void:
 	else:
 		GameNet.roll()
 
+## Termina de animar tu tirada: avisa al servidor para que empiece el reloj de movimiento.
+## Espera a que paren los dados y a que se hayan atendido los eventos de la tirada. También
+## cubre volver a la partida con la animación aún pendiente: confirma de inmediato.
+func _auto_confirm_animation() -> void:
+	if RollHold.active() or not _pending_events.is_empty() or GameNet.busy:
+		return
+	if not GameNet.awaiting_animation_confirmation():
+		return
+	var roll_id := str(_turn().get("rollId", ""))
+	if roll_id == _confirmed_roll:
+		return
+	var tries := int(_confirm_tries.get(roll_id, 0))
+	if tries >= 3:
+		return
+	if GameNet.confirm_animation():
+		_confirmed_roll = roll_id
+		_confirm_tries[roll_id] = tries + 1
+
+func _can_capture() -> bool:
+	for m in GameNet.legal_moves:
+		if bool(m.get("capture", false)):
+			return true
+	return false
+
+## SOPLAR: si pasas con una captura posible, el servidor devuelve a casa una ficha tuya.
+## La primera pulsación avisa; la segunda, en la misma jugada, pasa de verdad.
 func _on_end_turn_pressed() -> void:
-	if _can_end_turn():
-		GameNet.end_turn()
+	if not _can_end_turn():
+		return
+	var version := int(GameNet.state.get("version", 0))
+	if _end_armed_version != version and _can_capture():
+		_end_armed_version = version
+		_toast("¡Puedes capturar! Pasar puede costarte una ficha", true)
+		return
+	GameNet.end_turn()
 
 # --- Avisos ------------------------------------------------------------------------------------------
 
 func _on_action_rejected(code: String, message: String) -> void:
+	if code in ["STALE_ROLL", "TURN_EXPIRED", "STALE_VERSION", "ANIMATION_PENDING"]:
+		_confirmed_roll = ""                  # tras el sync se puede reintentar la confirmación
 	if code in GameNet.NO_SYNC_ERRORS:
 		return
 	_toast(str(ERROR_TEXT.get(code, message if message != "" else code)), true)
 
-## US-011 esc. 4: con pares y fichas en casa, si el servidor no ofrece ninguna
-## liberación pero sí otros movimientos, es porque la salida está llena.
-func _on_legal_moves(moves: Array) -> void:
+func _on_legal_moves(_moves: Array) -> void:
 	_update_turn_label()
-	if RollHold.active() or moves.is_empty() or not GameNet.is_my_turn():
-		return
-	var turn := _turn()
-	if not bool(turn.get("doubles", false)):
-		return
-	var has_free_die := false
-	for used in turn.get("consumed", []):
-		if not bool(used):
-			has_free_die = true
-	if not has_free_die:
-		return
-	var has_home_piece := false
-	for piece in GameNet.state.get("pieces", []):
-		if str(piece.get("ownerId", "")) == GameNet.me and BoardMap.is_home(piece):
-			has_home_piece = true
-	if not has_home_piece:
-		return
-	for m in moves:
-		if bool(m.get("release", false)):
-			return
-	var version := int(GameNet.state.get("version", 0))
-	if version == _exit_warned_version:
-		return
-	_exit_warned_version = version
-	_toast("Tu salida está llena: no puedes sacar fichas")
 
 ## Los eventos se atienden en orden. Si ruedan unos dados, los siguientes esperan:
 ## así lo que hace un bot justo después de tirar no pisa la animación.
 func _on_events(events: Array, _version: int) -> void:
-	_pending_events.append_array(events)
+	# Las salidas automáticas llegan una por ficha: se resumen en un solo aviso por jugador.
+	var released := {}
+	for e in events:
+		if str(e.get("type", "")) == "PIECE_RELEASED":
+			var d: Variant = e.get("data")
+			var owner_id := _owner_of_piece(str(d.get("pieceId", ""))) if d is Dictionary else ""
+			released[owner_id] = int(released.get(owner_id, 0)) + 1
+		else:
+			_pending_events.append(e)
+	for owner_id in released:
+		_pending_events.append({"type": "RELEASE_SUMMARY",
+				"data": {"ownerId": owner_id, "count": released[owner_id]}})
 	_drain_events()
 
+## La tirada nueva se atiende aunque haya una pausa en curso (es la que la provoca); el
+## resto de eventos espera a que paren los dados.
 func _drain_events() -> void:
-	while not _pending_events.is_empty() and not RollHold.active():
+	while not _pending_events.is_empty():
+		var next: Variant = _pending_events[0]
+		if RollHold.active() and str(next.get("type", "")) != "DICE_ROLLED":
+			break
 		_handle_event(_pending_events.pop_front())
 
 func _handle_event(e: Variant) -> void:
 	var data: Dictionary = e.data if e.get("data") is Dictionary else {}
 	match str(e.get("type", "")):
 		"TURN_CHANGED":
-			var pid := str(data.get("playerId", ""))
-			if pid == GameNet.me:
-				_toast("¡Turno extra!" if pid == _prev_turn_player else "¡Es tu turno!")
-			elif pid != "" and pid == _prev_turn_player:
-				_toast("Turno extra de " + _short_name(_player_name(pid)))   # US-006 esc. 5
-			_prev_turn_player = pid
+			if str(data.get("playerId", "")) == GameNet.me:
+				_toast("¡Es tu turno!")
+		"ROLL_AVAILABLE":
+			_on_roll_available(data)
 		"TURN_EXPIRED":
 			var who := str(data.get("playerId", ""))
+			var no_confirm := str(data.get("reason", "")) == "ANIMATION_TIMEOUT"
 			if who == GameNet.me:
-				_toast("Se acabó tu tiempo", true)
+				_toast("No confirmaste los dados a tiempo" if no_confirm else "Se acabó tu tiempo", true)
 			else:
 				_toast("Se acabó el tiempo de " + _short_name(_player_name(who)))
+		"RELEASE_SUMMARY":
+			_on_release_summary(data)
+		"PIECE_BLOWN":
+			_on_piece_blown(data)
+		"BLOW_AMBIGUOUS":
+			var first: Variant = data.get("pieceIds")
+			if first is Array and not first.is_empty() and _owner_of_piece(str(first[0])) == GameNet.me:
+				_toast("Había varias capturas: esta vez nadie pierde ficha")
+		"CROWN_CHOICE_REQUIRED":
+			var chooser := str(data.get("playerId", ""))
+			_toast("¡Tres pares! Elige una ficha para coronar" if chooser == GameNet.me \
+					else "¡Tres pares de %s!" % _short_name(_player_name(chooser)))
+		"PIECE_CROWNED":
+			var crown_owner := _owner_of_piece(str(data.get("pieceId", "")))
+			_toast("¡Coronaste una ficha con tres pares!" if crown_owner == GameNet.me \
+					else "%s coronó una ficha con tres pares" % _short_name(_player_name(crown_owner)))
 		"DICE_ROLLED":
 			_on_dice_rolled(data)
 		"PIECE_MOVED":
@@ -486,8 +562,7 @@ func _on_dice_rolled(data: Dictionary) -> void:
 	if who == GameNet.me and _dices != null:
 		_dices.play_roll(values)                  # y el panel grande de abajo
 	if int(values[0]) == int(values[1]):
-		_toast("¡Pares! Turno extra" if who == GameNet.me \
-				else "¡Pares de %s!" % _short_name(_player_name(who)))
+		_toast("¡Pares!" if who == GameNet.me else "¡Pares de %s!" % _short_name(_player_name(who)))
 
 func _on_piece_moved(data: Dictionary) -> void:
 	if data.get("cardId") != null:
@@ -497,10 +572,7 @@ func _on_piece_moved(data: Dictionary) -> void:
 	if str(data.get("status", "")) == "CROWNED":         # US-015
 		_toast("¡Ficha coronada!" if owner_id == GameNet.me \
 				else "%s coronó una ficha" % _short_name(_player_name(owner_id)))
-	elif data.get("from") == null:                        # sale de casa (US-011)
-		_toast("Sacaste una ficha" if owner_id == GameNet.me \
-				else "%s sacó una ficha" % _short_name(_player_name(owner_id)))
-	elif owner_id == GameNet.me and data.get("to") != null:
+	elif owner_id == GameNet.me and data.get("from") != null and data.get("to") != null:
 		var from_id := int(data.get("from"))
 		var to_id := int(data.get("to"))
 		if Board.is_safe(to_id) and not Board.is_safe(from_id):
@@ -508,6 +580,13 @@ func _on_piece_moved(data: Dictionary) -> void:
 
 func _on_piece_captured(data: Dictionary) -> void:
 	var victim := _owner_of_piece(str(data.get("pieceId", "")))
+	if str(data.get("reason", "")) == "HOME_RELEASE":        # salieron en la casilla de otro color
+		if victim == GameNet.me:
+			_toast("Tu ficha volvió a casa: ocupaba una salida ajena", true)
+			_flash_screen()
+		else:
+			_toast("%s perdió una ficha: salieron en su casilla" % _short_name(_player_name(victim)))
+		return
 	var killer := _owner_of_piece(GameText.s(data.get("byPieceId")))
 	if data.get("cardId") != null and killer == "":        # US-010 esc. 3: captura hecha por una carta
 		_on_card_piece_returned({"playerId": victim})
@@ -519,6 +598,35 @@ func _on_piece_captured(data: Dictionary) -> void:
 	else:
 		_toast("%s capturó una ficha de %s" % [
 				_short_name(_player_name(killer)), _short_name(_player_name(victim))])
+
+## Salida automática con pares (US-011): una sola línea por jugador.
+func _on_release_summary(data: Dictionary) -> void:
+	var owner_id := str(data.get("ownerId", ""))
+	var count := int(data.get("count", 0))
+	if count <= 0:
+		return
+	var many := "fichas" if count > 1 else "ficha"
+	_toast("Sacaste %d %s" % [count, many] if owner_id == GameNet.me \
+			else "%s sacó %d %s" % [_short_name(_player_name(owner_id)), count, many])
+
+## Otra tirada en el mismo turno (pares o intento de salida). Solo avisa al jugador.
+func _on_roll_available(data: Dictionary) -> void:
+	if str(data.get("playerId", "")) != GameNet.me:
+		return
+	if not _has_board_piece(GameNet.me) and _has_home_piece(GameNet.me):
+		var attempt := clampi(int(_turn().get("homeAttempts", 0)) + 1, 1, 3)
+		_toast("Sin par: intento %d de 3, tira otra vez" % attempt)
+	else:
+		_toast("Tira otra vez")
+
+## SOPLAR: no capturaste teniendo una captura legal y una ficha tuya vuelve a casa.
+func _on_piece_blown(data: Dictionary) -> void:
+	var owner_id := str(data.get("playerId", ""))
+	if owner_id == GameNet.me:
+		_toast("¡Soplaron tu ficha! Debías capturar", true)
+		_flash_screen()
+	else:
+		_toast("%s perdió una ficha por no capturar" % _short_name(_player_name(owner_id)))
 
 ## Una carta movió una ficha: salir de la cárcel (US-011 esc. 2), a zona segura
 ## (US-013 esc. 3) o a la meta (US-015 esc. 2).
@@ -733,8 +841,10 @@ func _cell_info(id: int) -> String:
 	var kind := str(Board.cell(id).get("kind", ""))
 	if Board.trivia_ids.has(id):
 		lines.append("Casilla de carta")
+	elif Board.is_exit(id):
+		lines.append("Salida (caben 4 fichas)")
 	elif Board.is_safe(id):
-		lines.append("Zona segura")
+		lines.append("Zona segura (caben 2 fichas)")
 	elif kind == Board.KIND_CROWN:
 		lines.append("Corona")
 	elif kind == Board.KIND_FINISH_LANE:

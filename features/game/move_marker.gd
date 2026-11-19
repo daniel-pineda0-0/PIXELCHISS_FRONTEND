@@ -61,8 +61,9 @@ func _draw() -> void:
 			draw_circle(Vector2.ZERO, radius, Color(color, 0.35))
 			draw_arc(Vector2.ZERO, radius, 0.0, TAU, 28, Color(color, 0.95), 2.0)
 			var font := ThemeDB.fallback_font
-			draw_string_outline(font, Vector2(-8, 5), label, HORIZONTAL_ALIGNMENT_CENTER, 16, 12, 4, Color.BLACK)
-			draw_string(font, Vector2(-8, 5), label, HORIZONTAL_ALIGNMENT_CENTER, 16, 12, Color.WHITE)
+			var size := 12 if label.length() <= 2 else 9          # "4+2" (suma de los dados) es más largo
+			draw_string_outline(font, Vector2(-14, 5), label, HORIZONTAL_ALIGNMENT_CENTER, 28, size, 4, Color.BLACK)
+			draw_string(font, Vector2(-14, 5), label, HORIZONTAL_ALIGNMENT_CENTER, 28, size, Color.WHITE)
 		Kind.HALO:
 			draw_set_transform(Vector2(0, 8), 0.0, Vector2(1.0, 0.45))    # aro aplastado a los pies
 			if crowned:

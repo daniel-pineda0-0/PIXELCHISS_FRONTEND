@@ -10,6 +10,26 @@ extends RefCounted
 const DURATION := 0.95
 
 static var _until_ms := 0
+static var _observed := false
+static var _last_roll_id := ""
+
+## Con las reglas v4-100 el estado de una tirada ya trae las fichas liberadas (y sus
+## capturas) ANTES de que llegue el evento DICE_ROLLED. Para que no aparezcan mientras
+## ruedan los dados, la pausa también arranca al ver una `turn.rollId` nueva en el estado.
+## Idempotente: puede llamarse desde varios sitios con el mismo estado. El primer estado
+## que se ve (entrar a una partida en curso) no pausa.
+static func observe(state: Dictionary) -> void:
+	var turn: Variant = state.get("turn")
+	var roll_id := ""
+	if turn is Dictionary and turn.get("rollId") != null:
+		roll_id = str(turn.get("rollId"))
+	if not _observed:
+		_observed = true
+		_last_roll_id = roll_id
+		return
+	if roll_id != "" and roll_id != _last_roll_id:
+		_last_roll_id = roll_id
+		start()
 
 static func start() -> void:
 	_until_ms = Time.get_ticks_msec() + int(DURATION * 1000.0)
@@ -19,3 +39,5 @@ static func active() -> bool:
 
 static func clear() -> void:
 	_until_ms = 0
+	_observed = false
+	_last_roll_id = ""

@@ -10,7 +10,7 @@ extends Node
 
 signal finished(ok: bool)
 
-const EXPECTED_LAYOUT := "v3-100"
+const EXPECTED_LAYOUT := "v4-100"
 const EXPECTED_CELLS := 100
 
 const KIND_TRACK := "TRACK"              # recorrido común (0-67)
@@ -20,7 +20,7 @@ const KIND_CROWN := "CROWN"              # corona, última casilla de cada corre
 
 var is_loaded := false
 var load_error := ""             # motivo legible si ensure_loaded() devolvió false
-var layout := ""                 # versión del tablero, p. ej. "v3-100"
+var layout := ""                 # versión del tablero, p. ej. "v4-100"
 var cell_count := 0
 var track_count := 0             # casillas del recorrido común
 var cells: Array = []            # [{id, kind, safe, protectedCell, capacity}]
@@ -81,8 +81,16 @@ func cell_at_progress(seat: int, piece_number: int, progress: int) -> int:
 		return -1
 	return path[progress]
 
-## Progreso de la corona. La ruta tiene un id por progreso; el seguro de salida
-## aparece en el progreso 0 y otra vez en el 68 (vuelta completa).
+## Salida de un color (v4-100: 5, 22, 39, 56): un seguro de capacidad 4. El JSON del
+## tablero no trae un campo aparte, así que se distingue de un seguro normal (capacidad
+## 2) por su capacidad.
+func is_exit(id: int) -> bool:
+	var c := cell(id)
+	return c.get("kind") == KIND_TRACK and bool(c.get("safe", false)) and int(c.get("capacity", 0)) >= 4
+
+## Progreso de la corona. La ruta tiene un id por progreso; la salida aparece en el
+## progreso 0 y otra vez en el 68 (vuelta completa), así que NUNCA se deduce el
+## progreso de la posición: se usa `piece.progress` del estado.
 func last_progress(seat: int, piece_number: int) -> int:
 	return route(seat, piece_number).size() - 1
 

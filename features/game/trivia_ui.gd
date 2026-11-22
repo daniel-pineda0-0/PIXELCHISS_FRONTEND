@@ -12,8 +12,7 @@ extends Control
 ## la ficha termine de moverse antes de que salga la pregunta.
 
 const LABEL_WHITE := preload("res://service/assets/ui/prefabs/PixelFontWhite.tres")
-const PANEL_WIDTH := 300.0
-const OPTION_SIZE := Vector2(144, 30)
+const TRIVIA_OPTION := preload("res://features/game/ui/trivia_option.tscn")
 const RESULT_TIME := 1.8
 const LOW_TIME := 5
 const OK_COLOR := Color(0.55, 1.0, 0.6)
@@ -27,9 +26,10 @@ const URGENT_COLOR := Color(1.0, 0.45, 0.4)
 @onready var _prompt := $PromptContainer/MarginContainer/VBoxContainer/PromptLabel as Label
 @onready var _grid := $PromptContainer/MarginContainer/VBoxContainer/GridContainer as GridContainer
 
-var _who: Label
-var _timer: Label
-var _result: Label
+@onready var _who: Label = %WhoLabel
+@onready var _timer: Label = %TimerLabel
+@onready var _result: Label = %ResultLabel
+
 var _buttons: Array[TextureButton] = []
 var _current := {}                  # trivia que está en pantalla
 var _shown_id := ""
@@ -40,37 +40,9 @@ var _pending_events: Array = []
 
 func _ready() -> void:
 	visible = false
-	mouse_filter = Control.MOUSE_FILTER_IGNORE         # el cuadro vacío del centro no debe tapar el tablero
-	_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	_panel.custom_minimum_size.x = PANEL_WIDTH
-	for child in _grid.get_children():                  # los botones de prueba de la escena
-		child.queue_free()
-	_grid.columns = 2
-	_grid.add_theme_constant_override("h_separation", 4)
-	_grid.add_theme_constant_override("v_separation", 4)
-	_box.add_theme_constant_override("separation", 6)
-
-	_who = _make_label()
-	_box.add_child(_who)
-	_box.move_child(_who, 0)
-	_prompt.label_settings = LABEL_WHITE.duplicate() as LabelSettings
-	_prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_prompt.custom_minimum_size.x = PANEL_WIDTH - 16.0
-	_timer = _make_label()
-	_box.add_child(_timer)
-	_result = _make_label()
-	_box.add_child(_result)
 
 	GameNet.events_received.connect(_on_events)
 	GameNet.action_rejected.connect(func(_code: String, _message: String): _answered = false)
-
-func _make_label() -> Label:
-	var label := Label.new()
-	label.label_settings = LABEL_WHITE.duplicate() as LabelSettings
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.custom_minimum_size.x = PANEL_WIDTH - 16.0
-	return label
 
 func _on_events(events: Array, _version: int) -> void:
 	for e in events:
@@ -117,8 +89,9 @@ func _open(trivia: Dictionary) -> void:
 	_result.visible = false
 	var options: Array = trivia.get("options", []) if trivia.get("options") is Array else []
 	for i in options.size():
-		var button := GameText.make_button(str(options[i]), OPTION_SIZE)
-		_grid.add_child(button)
+		var button := TRIVIA_OPTION.instantiate() as TextureButton
+		_grid.add_child(button)                      # primero al árbol: set_text usa @onready
+		button.set_text(str(options[i]))
 		button.pressed.connect(_on_option_pressed.bind(i))
 		_buttons.append(button)
 	visible = true

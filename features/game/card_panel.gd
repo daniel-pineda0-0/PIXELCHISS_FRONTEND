@@ -10,10 +10,8 @@ extends Control
 ## - Carta ya aplicada (EFFECT_APPLIED) o descartada (CARD_DISCARDED): aviso breve
 ##   con lo que hizo, para todos los jugadores.
 ## El panel no deja de pasar los clics al tablero, salvo en sus propios botones.
+## Los nodos viven en card_panel.tscn (nombres únicos %); aquí solo se rellenan.
 
-const LABEL_WHITE := preload("res://service/assets/ui/prefabs/PixelFontWhite.tres")
-const PANEL_WIDTH := 232.0
-const TOP_OFFSET := 44.0            # bajo el aviso de turno (game_ui)
 const REVEAL_TIME := 2.6
 const LOW_TIME := 5
 const CHOICE_SIZE := Vector2(110, 24)
@@ -21,60 +19,20 @@ const BUFF_COLOR := Color(0.55, 1.0, 0.6)
 const DEBUFF_COLOR := Color(1.0, 0.5, 0.45)
 const URGENT_COLOR := Color(1.0, 0.45, 0.4)
 
-var _panel: PanelContainer
-var _kind: Label
-var _title: Label
-var _desc: Label
-var _hint: Label
-var _timer: Label
-var _choices_box: VBoxContainer
+@onready var _panel: PanelContainer = %Panel
+@onready var _kind: Label = %KindLabel
+@onready var _title: Label = %TitleLabel
+@onready var _desc: Label = %DescLabel
+@onready var _hint: Label = %HintLabel
+@onready var _timer: Label = %TimerLabel
+@onready var _choices_box: VBoxContainer = %Choices
+
 var _shown_id := ""                 # desafío de carta que está en pantalla
 var _reveal_left := 0.0
 var _pending_events: Array = []
 
 func _ready() -> void:
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_panel = PanelContainer.new()
-	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_panel.visible = false
-	add_child(_panel)
-	_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP, Control.PRESET_MODE_MINSIZE)
-	_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_panel.offset_top = TOP_OFFSET
-	_panel.offset_bottom = TOP_OFFSET
-	_panel.custom_minimum_size.x = PANEL_WIDTH
-
-	var margin := MarginContainer.new()
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 6)
-	_panel.add_child(margin)
-	var box := VBoxContainer.new()
-	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.add_theme_constant_override("separation", 4)
-	margin.add_child(box)
-
-	_kind = _make_label(box)
-	_title = _make_label(box)
-	_desc = _make_label(box)
-	_hint = _make_label(box)
-	_timer = _make_label(box)
-	_choices_box = VBoxContainer.new()
-	_choices_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_choices_box.add_theme_constant_override("separation", 3)
-	box.add_child(_choices_box)
-
 	GameNet.events_received.connect(_on_events)
-
-func _make_label(parent: Node) -> Label:
-	var label := Label.new()
-	label.label_settings = LABEL_WHITE.duplicate() as LabelSettings
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.custom_minimum_size.x = PANEL_WIDTH - 12.0
-	parent.add_child(label)
-	return label
 
 func _on_events(events: Array, _version: int) -> void:
 	for e in events:

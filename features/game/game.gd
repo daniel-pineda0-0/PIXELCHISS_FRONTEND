@@ -14,7 +14,7 @@ const WORLDS := {
 
 var world: Node2D
 var view: BoardView
-var _debug: Label
+@onready var _debug: Label = %DebugLabel
 
 func _ready() -> void:
 	if GameState.game_id == "":
@@ -22,7 +22,7 @@ func _ready() -> void:
 		return
 	_load_world(GameState.map_id)
 	_build_board_view()
-	_build_debug_overlay()
+	_setup_debug_overlay()
 	GameNet.fatal.connect(_on_fatal)
 	GameNet.events_received.connect(_on_events)
 	for signal_ref in [GameNet.state_changed, GameNet.status_changed, GameNet.busy_changed]:
@@ -50,7 +50,7 @@ func _build_board_view() -> void:
 	view = BoardView.new()
 	view.name = "BoardView"
 	add_child(view)
-	view.setup(world)
+	view.setup(world, $Pieces, $Halos, $Targets)
 	GameNet.state_changed.connect(view.refresh)
 	GameNet.legal_moves_changed.connect(view.on_overlays_changed)
 	GameNet.busy_changed.connect(view.on_overlays_changed)
@@ -74,18 +74,11 @@ func _on_events(events: Array, version: int) -> void:
 
 # --- Overlay de depuración (solo builds de debug) ---
 
-func _build_debug_overlay() -> void:
-	if not OS.is_debug_build():
+func _setup_debug_overlay() -> void:
+	if OS.is_debug_build():
 		return
-	var layer := CanvasLayer.new()
-	layer.layer = 100
-	_debug = Label.new()
-	_debug.position = Vector2(4, 4)
-	_debug.add_theme_font_size_override("font_size", 8)
-	_debug.add_theme_color_override("font_outline_color", Color.BLACK)
-	_debug.add_theme_constant_override("outline_size", 3)
-	layer.add_child(_debug)
-	add_child(layer)
+	$DebugOverlay.queue_free()       # el texto de depuración solo existe en debug
+	_debug = null
 
 func _refresh_debug() -> void:
 	if _debug == null:

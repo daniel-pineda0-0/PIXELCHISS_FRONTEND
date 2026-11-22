@@ -24,6 +24,9 @@ extends Node
 ## una envía CARD_TARGET con esa opción tal cual.
 
 const PIECE_SCENE := preload("res://features/game/ground_pice.tscn")
+const HALO_SCENE := preload("res://features/game/fx/piece_halo.tscn")
+const TARGET_SCENE := preload("res://features/game/fx/target_marker.tscn")
+const BURST_SCENE := preload("res://features/game/fx/burst_effect.tscn")
 const IDLE_ANIMATION := &"idl_ground_pice"
 const CHUNK_WIDTH := 32.0 * 17.0      # 17 columnas de 32 px (igual que player_ground.gd)
 const SHARED_CELL_SPACING := 8.0      # separación entre fichas que comparten casilla
@@ -68,8 +71,8 @@ var _focused_once := false
 
 var _halo_layer: Node2D               # aros bajo las fichas
 var _target_layer: Node2D             # destinos de la ficha elegida
-var _halos := {}                      # id de ficha -> MoveMarker (HALO)
-var _targets: Array = []              # MoveMarker (TARGET) de la ficha elegida
+var _halos := {}                      # id de ficha -> PieceHalo
+var _targets: Array = []              # TargetMarker de la ficha elegida
 var _selected_piece := ""
 var _focused_piece := ""              # última ficha a la que se llevó la cámara
 var _focused_card := ""               # último desafío de carta al que se llevó la cámara
@@ -83,8 +86,12 @@ var _pending_state := {}              # último estado recibido mientras ruedan 
 var _pending_events: Array = []       # eventos recibidos en ese lapso
 var _was_holding := false
 
-func setup(world_node: Node2D) -> void:
+## Las capas (Pieces, Halos, Targets) ya vienen creadas en game.tscn.
+func setup(world_node: Node2D, pieces_layer: Node2D, halo_layer: Node2D, target_layer: Node2D) -> void:
 	world = world_node
+	_pieces_layer = pieces_layer
+	_halo_layer = halo_layer
+	_target_layer = target_layer
 	camera = world.get_node_or_null("Camera2D") as Camera2D
 	var level := world.get_node_or_null("level")
 	if level == null:
@@ -111,18 +118,13 @@ func setup(world_node: Node2D) -> void:
 	if not _chunks.is_empty():
 		var first: int = _chunks.keys()[0]
 		_center_x = _chunk_center(first).x - int(_assigned[first]) * CHUNK_WIDTH
-	_pieces_layer = Node2D.new()
-	_pieces_layer.name = "Pieces"
-	_pieces_layer.z_index = 10
-	world.add_child(_pieces_layer)
-	_halo_layer = Node2D.new()
-	_halo_layer.name = "Halos"
-	_halo_layer.z_index = 9          # bajo las fichas
-	world.add_child(_halo_layer)
-	_target_layer = Node2D.new()
-	_target_layer.name = "Targets"
-	_target_layer.z_index = 12       # sobre las fichas (un destino puede ser una casilla ocupada)
-	world.add_child(_target_layer)
+
+## Destello en el mundo (captura, soplo, coronación): BurstEffect.tscn se borra solo.
+func _burst(world_pos: Vector2, tint := COLOR_CAPTURE) -> void:
+	var fx := BURST_SCENE.instantiate() as BurstEffect
+	_pieces_layer.add_child(fx)
+	fx.global_position = world_pos
+	fx.play(tint)
 
 func _process(delta: float) -> void:
 	if _chunks.is_empty():
@@ -272,14 +274,14 @@ func _burst_at_previous(piece_id: String, tint := Color(1.0, 0.3, 0.3)) -> void:
 	var prev: Dictionary = _prev_placements.get(piece_id, {})
 	if prev.is_empty() or not _chunks.has(prev.chunk):
 		return
-	MoveMarker.burst(_pieces_layer, _cell_world(prev.chunk, prev.cell) + Vector2(prev.shift, 0), tint)
+	_burst(_cell_world(prev.chunk, prev.cell) + Vector2(prev.shift, 0), tint)
 
 ## Destello dorado en la corona, donde ya está la ficha.
 func _burst_crown(piece_id: String) -> void:
 	var now: Dictionary = _placements.get(piece_id, {})
 	if now.is_empty() or not _chunks.has(now.chunk):
 		return
-	MoveMarker.burst(_pieces_layer, _cell_world(now.chunk, now.cell) + Vector2(now.shift, 0), COLOR_CROWN)
+	_burst(_cell_world(now.chunk, now.cell) + Vector2(now.shift, 0), COLOR_CROWN)
 
 ## ¿La ficha es del jugador local? (id "seat-{asiento}-piece-{n}")
 func _is_mine(piece_id: String) -> bool:
@@ -334,7 +336,7 @@ func _capture_sequence(victim: String, attacker: String) -> void:
 func _release_victim(victim: String, old: Dictionary) -> void:
 	if not _pieces.has(victim) or not _placements.has(victim) or not _chunks.has(old.chunk):
 		return
-	MoveMarker.burst(_pieces_layer, _cell_world(old.chunk, old.cell) + Vector2(old.shift, 0))
+	_burst(_cell_world(old.chunk, old.cell) + Vector2(old.shift, 0))
 	_start_slide(victim, old, _placements[victim])
 
 ## Aplica lo que quedó en espera durante la animación de los dados: primero el
@@ -415,10 +417,9 @@ func _rebuild_overlays() -> void:
 		if not guarded and not can_move and not crowned:
 			continue
 		wanted[id] = true
-		var halo: MoveMarker = _halos.get(id)
+		var halo: PieceHalo = _halos.get(id)
 		if halo == null:
-			halo = MoveMarker.new()
-			halo.kind = MoveMarker.Kind.HALO
+			halo = HALO_SCENE.instantiate() as PieceHalo
 			_halo_layer.add_child(halo)
 			_halos[id] = halo
 		halo.safe_cell = guarded
@@ -444,8 +445,7 @@ func _rebuild_overlays() -> void:
 			var placed := BoardMap.strip_cell(to)
 			if placed.is_empty() or not _chunks.has(placed.seat):
 				continue
-			var target := MoveMarker.new()
-			target.kind = MoveMarker.Kind.TARGET
+			var target := TARGET_SCENE.instantiate() as TargetMarker
 			target.label = _move_label(m)
 			target.color = _move_color(m)
 			target.move = m
@@ -550,8 +550,7 @@ func _add_card_targets(card_choices: Array) -> void:
 		var placed := BoardMap.strip_cell(cell_id)
 		if placed.is_empty() or not _chunks.has(placed.seat):
 			continue
-		var target := MoveMarker.new()
-		target.kind = MoveMarker.Kind.TARGET
+		var target := TARGET_SCENE.instantiate() as TargetMarker
 		target.label = str(marker.label)
 		target.color = marker.color
 		target.move = c
@@ -598,7 +597,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	var best := ""
 	var best_distance := CLICK_RADIUS
 	for id in _halos:
-		var halo: MoveMarker = _halos[id]
+		var halo: PieceHalo = _halos[id]
 		if not halo.movable:
 			continue
 		var distance := halo.global_position.distance_to(pos)

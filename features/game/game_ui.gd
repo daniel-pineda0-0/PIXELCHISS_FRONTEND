@@ -21,14 +21,9 @@ signal view_step(direction: int)    # -1 izquierda, 1 derecha, 0 soltó el botó
 const SHARED_CELL_SPACING := 2.0
 const MINIMAP_PIECE := preload("res://features/game/game_pice.tscn")
 const HOVER_RADIUS := 6.0          # px del minimapa: qué tan cerca de una casilla hay que pasar para ver su letrero
-const LABEL_WHITE := preload("res://service/assets/ui/prefabs/PixelFontWhite.tres")
-const END_TURN_BUTTON := preload("res://features/lobby/join_button.tscn")
 const SEAT_NAMES := ["Rojo", "Azul", "Verde", "Amarillo"]
 const RESULT_DELAY := 1.2           # deja ver el último movimiento antes de la pantalla final
-const TOAST_TIME := 1.8
-const TOAST_MAX_QUEUE := 3
 const LOW_TIME := 10                # segundos: el cronómetro se pone rojo
-const URGENT_COLOR := Color(1.0, 0.45, 0.4)
 
 ## Texto para el jugador de los rechazos del servidor (guía §10). Los que no están
 ## aquí se muestran con el mensaje que mande el servidor.
@@ -55,64 +50,57 @@ const ERROR_TEXT := {
 	"INVALID_CARD_TARGET": "Ese objetivo no es válido",
 }
 
-var _minimap_panel: Control
-var _hover: PanelContainer         # letrero al pasar el ratón por una casilla del minimapa
-var _hover_label: Label
-var _hover_text := ""
-var _layer: Node2D                  # TileMapLayer del minimapa: las fichas van dentro, así comparten su transformación
-var _pieces_root: Node2D
-var _pieces := {}                   # id de ficha -> MinimapPiece
+# Nodos de game_ui.tscn: se piden por nombre único (%), no por ruta. Si reorganizas el HUD,
+# mientras conserve el nombre único, nada se rompe.
+@onready var _hud: Control = %GameHUD
+@onready var _hud_margin: Control = %HUDMargin
+@onready var _minimap_panel: Control = %MiniMap
+@onready var _layer: TileMapLayer = %TileMapLayer   # las fichas del minimapa van dentro, así comparten su transformación
+@onready var _pieces_root: Node2D = %MiniPieces
+@onready var _dices_panel: Control = %Dices          # panel grande de abajo: dados del turno + botón de lanzar
+@onready var _dices = %MainDices                     # dices.gd (show_values / play_roll / clear)
+@onready var _roll_button: Button = %PlayerButton
+@onready var _left_button: Button = %ButtonL
+@onready var _right_button: Button = %ButtonR
+@onready var _player_cards_box: HBoxContainer = %PlayerCards
+@onready var _turn_banner: TurnBanner = %TurnBanner
+@onready var _end_button: TextureButton = %EndTurnButton
+@onready var _toaster: Toast = %Toast
+@onready var _hover: CellTooltip = %CellTooltip      # letrero al pasar el ratón por una casilla del minimapa
+@onready var _result_screen: ResultScreen = %ResultScreen
 
-var _hud: Control
-var _dices_panel: Control           # panel grande de abajo: dados del turno + botón de lanzar
-var _dices: Variant                 # dices.gd (show_values / play_roll / clear)
-var _roll_button: Button
+var _pieces := {}                   # id de ficha -> MinimapPiece
 var _card_nodes: Array[PlayerCardGame] = []  # tarjetas del HUD, en el orden de la escena
 var _cards := {}                    # asiento -> PlayerCardGame
 var _cards_ready := false
-var _turn_label: Label
-var _end_button: TextureButton
-var _toast_label: Label
-var _flash: ColorRect
-var _toast_queue: Array[String] = []
-var _toast_left := 0.0
 var _tick := 0.0
 var _confirmed_roll := ""           # rollId cuya animación ya confirmé
 var _confirm_tries := {}            # rollId -> intentos de confirmación (para no reintentar sin fin)
 var _end_armed_version := -1         # versión en la que ya avisé "puedes capturar" antes de pasar
 var _result_scheduled := false
-var _result_panel: Control
 var _last_dice := {}                # asiento -> últimos dados que sacó (se conservan entre turnos)
 var _pending_events: Array = []     # eventos en espera mientras ruedan los dados
 var _was_holding := false
 
 func _ready() -> void:
-	var minimap := find_child("MiniMap", true, false)
-	if minimap != null:
-		_layer = minimap.find_child("TileMapLayer", true, false) as Node2D
-	_minimap_panel = minimap as Control
-	var test_piece := find_child("GamePice", true, false)
-	if test_piece != null:
-		test_piece.queue_free()     # ficha de prueba de la escena
-	if _layer != null:
-		_pieces_root = Node2D.new()
-		_pieces_root.name = "MiniPieces"
-		_pieces_root.z_index = 10            # por encima de las casillas del minimapa
-		_layer.add_child(_pieces_root)
-	else:
-		push_warning("GameUI: no se encontró el TileMapLayer del minimapa")
+	# El HUD ocupa toda la pantalla: si no deja pasar el ratón, el tablero no recibe clics.
+	_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hud_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	var left := find_child("ButtonL", true, false) as Button
-	var right := find_child("ButtonR", true, false) as Button
-	if left != null:
-		left.button_down.connect(func(): view_step.emit(-1))
-		left.button_up.connect(func(): view_step.emit(0))
-	if right != null:
-		right.button_down.connect(func(): view_step.emit(1))
-		right.button_up.connect(func(): view_step.emit(0))
+	_left_button.button_down.connect(func(): view_step.emit(-1))
+	_left_button.button_up.connect(func(): view_step.emit(0))
+	_right_button.button_down.connect(func(): view_step.emit(1))
+	_right_button.button_up.connect(func(): view_step.emit(0))
 
-	_setup_turn_hud()
-	add_child(CardPanel.new())       # aviso y objetivo de las cartas (Fase 4)
+	_roll_button.pressed.connect(_on_roll_pressed)
+	_roll_button.focus_mode = Control.FOCUS_NONE
+	_end_button.pressed.connect(_on_end_turn_pressed)
+	_result_screen.back_pressed.connect(_on_result_back)
+
+	for child in _player_cards_box.get_children():
+		if child is PlayerCardGame:
+			child.visible = false          # se muestran según cuántos jugadores haya
+			_card_nodes.append(child)
 
 	GameNet.state_changed.connect(_on_state_changed)
 	GameNet.busy_changed.connect(func(_busy: bool): _refresh_turn(GameNet.state))
@@ -133,88 +121,6 @@ func _on_state_changed(state: Dictionary) -> void:
 		return
 	_refresh_minimap(state)
 	_refresh_turn(state)
-
-# --- Montaje del HUD de turnos -------------------------------------------------------
-
-func _setup_turn_hud() -> void:
-	_hud = get_node_or_null("GameHUD") as Control
-	if _hud == null:
-		push_warning("GameUI: no se encontró GameHUD")
-		return
-	# El HUD ocupa toda la pantalla: si no deja pasar el ratón, el tablero no recibe clics.
-	_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var margin := _hud.get_node_or_null("MarginContainer") as Control
-	if margin != null:
-		margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	_dices_panel = _hud.get_node_or_null("MarginContainer/Dices") as Control
-	if _dices_panel != null:
-		_dices = _dices_panel.get_node_or_null("AspectRatioContainer/dices")
-		_roll_button = _dices_panel.get_node_or_null("PlayerButton") as Button
-		if _roll_button != null:
-			_roll_button.pressed.connect(_on_roll_pressed)
-			_roll_button.focus_mode = Control.FOCUS_NONE
-
-	var box := _hud.get_node_or_null("MarginContainer/Players/HBoxContainer")
-	if box != null:
-		for child in box.get_children():
-			if child is PlayerCardGame:
-				child.visible = false          # se muestran según cuántos jugadores haya
-				_card_nodes.append(child)
-
-	_build_turn_banner()
-	_build_end_turn_button()
-	_build_toast()
-	_build_hover()
-
-func _build_turn_banner() -> void:
-	var panel := PanelContainer.new()
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hud.add_child(panel)
-	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP, Control.PRESET_MODE_MINSIZE)
-	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	panel.offset_top = 16.0
-	panel.offset_bottom = 16.0
-	_turn_label = Label.new()
-	_turn_label.label_settings = LABEL_WHITE.duplicate() as LabelSettings
-	_turn_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_turn_label.custom_minimum_size = Vector2(200, 0)
-	_turn_label.text = "Conectando..."
-	panel.add_child(_turn_label)
-
-func _build_end_turn_button() -> void:
-	_end_button = END_TURN_BUTTON.instantiate() as TextureButton
-	_hud.add_child(_end_button)
-	_end_button.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, 16)
-	_end_button.grow_horizontal = Control.GROW_DIRECTION_BEGIN
-	_end_button.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_end_button.set_text("Pasar")
-	_end_button.tooltip_text = "Termina tu turno (pierdes la tirada extra por pares)"
-	_end_button.focus_mode = Control.FOCUS_NONE
-	_end_button.visible = false
-	_end_button.pressed.connect(_on_end_turn_pressed)
-
-func _build_toast() -> void:
-	_toast_label = Label.new()
-	var settings := LABEL_WHITE.duplicate() as LabelSettings
-	settings.outline_size = 4
-	settings.outline_color = Color.BLACK
-	_toast_label.label_settings = settings
-	_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_toast_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_toast_label.visible = false
-	_hud.add_child(_toast_label)
-	_toast_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM, Control.PRESET_MODE_MINSIZE)
-	_toast_label.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	_toast_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	_toast_label.offset_top = -72.0
-	_toast_label.offset_bottom = -72.0
-
-	_flash = ColorRect.new()
-	_flash.color = Color(1, 0.1, 0.1, 0.0)
-	_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hud.add_child(_flash)
-	_flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 # --- Tarjetas de jugador ---------------------------------------------------------------
 
@@ -329,13 +235,11 @@ func _effects_by_seat(state: Dictionary) -> Dictionary:
 	return by_seat
 
 func _update_turn_label() -> void:
-	if _turn_label == null:
-		return
 	if GameNet.state.is_empty():
-		_turn_label.text = "Conectando..."
+		_turn_banner.set_message("Conectando...")
 		return
 	if not _is_playing():
-		_turn_label.text = "Partida terminada"
+		_turn_banner.set_message("Partida terminada")
 		return
 	var turn := _turn()
 	var active_id := str(turn.get("playerId", ""))
@@ -367,10 +271,7 @@ func _update_turn_label() -> void:
 	var seconds := _seconds_left()
 	if seconds >= 0:
 		text += "  %ds" % seconds
-	_turn_label.text = text
-	var label_settings := _turn_label.label_settings
-	if label_settings != null:
-		label_settings.font_color = URGENT_COLOR if seconds >= 0 and seconds <= LOW_TIME else Color.WHITE
+	_turn_banner.set_message(text, seconds >= 0 and seconds <= LOW_TIME)
 
 ## Plazo (Unix ms) del reloj que corresponde a la fase actual (guía §8.1). `turn.deadline` por sí
 ## solo no sirve: cambia de significado y durante una trivia NO es un reloj activo. 0 = sin reloj.
@@ -420,7 +321,6 @@ func _process(delta: float) -> void:
 	if _dices_panel != null:
 		var pulse := 0.65 + 0.35 * sin(Time.get_ticks_msec() / 1000.0 * 6.0)
 		_dices_panel.modulate = Color(1.0, 1.0, pulse) if _can_roll() else Color.WHITE
-	_tick_toast(delta)
 	_update_hover()
 
 # --- Acciones del jugador ---------------------------------------------------------------------
@@ -677,43 +577,12 @@ func _on_effect_consumed(data: Dictionary) -> void:
 	if str(data.get("effectCode", "")) == "SKIP_NEXT_TURN":
 		_toast("Pierdes este turno" if who == GameNet.me else "%s pierde su turno" % _short_name(_player_name(who)))
 
-## Mensajes en cola para que varios eventos de la misma jugada no se pisen.
-## `urgent` descarta lo pendiente y se muestra al momento (errores, captura propia).
+## Avisos y destello rojo: la cola y los tiempos viven en Toast (ui/toast.gd).
 func _toast(text: String, urgent := false) -> void:
-	if _toast_label == null or text == "":
-		return
-	if urgent:
-		_toast_queue.clear()
-		_show_toast(text)
-		return
-	_toast_queue.append(text)
-	while _toast_queue.size() > TOAST_MAX_QUEUE:
-		_toast_queue.pop_front()
-	if _toast_left <= 0.0:
-		_show_toast(_toast_queue.pop_front())
-
-func _show_toast(text: String) -> void:
-	_toast_label.text = text
-	_toast_label.visible = true
-	_toast_left = TOAST_TIME
-
-func _tick_toast(delta: float) -> void:
-	if _toast_left <= 0.0:
-		return
-	_toast_left -= delta
-	if _toast_left > 0.0:
-		return
-	if _toast_queue.is_empty():
-		_toast_label.visible = false
-	else:
-		_show_toast(_toast_queue.pop_front())
+	_toaster.show_message(text, urgent)
 
 func _flash_screen() -> void:
-	if _flash == null:
-		return
-	_flash.color.a = 0.35
-	var tween := create_tween()
-	tween.tween_property(_flash, "color:a", 0.0, 0.5)
+	_toaster.flash()
 
 # --- Fin de la partida (US-014) -----------------------------------------------------------------------
 
@@ -743,53 +612,7 @@ func _show_result() -> void:
 				SEAT_NAMES[posmod(seat, SEAT_NAMES.size())] if seat >= 0 else "?"]
 		crowned_text = "4 fichas coronadas"
 
-	_result_panel = Control.new()
-	_result_panel.mouse_filter = Control.MOUSE_FILTER_STOP     # nada debajo recibe clics
-	_hud.add_child(_result_panel)
-	_result_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.7)
-	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_result_panel.add_child(dim)
-	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var center := CenterContainer.new()
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_result_panel.add_child(center)
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var panel := PanelContainer.new()
-	center.add_child(panel)
-	var margin := MarginContainer.new()
-	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 14)
-	panel.add_child(margin)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 10)
-	box.alignment = BoxContainer.ALIGNMENT_CENTER
-	margin.add_child(box)
-
-	var title_settings := LABEL_WHITE.duplicate() as LabelSettings
-	title_settings.font_size = 16
-	box.add_child(_result_label(title, title_settings))
-	var color_block := ColorRect.new()
-	color_block.color = swatch
-	color_block.custom_minimum_size = Vector2(24, 24)
-	color_block.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	box.add_child(color_block)
-	box.add_child(_result_label(detail, LABEL_WHITE))
-	if crowned_text != "":
-		box.add_child(_result_label(crowned_text, LABEL_WHITE))
-	var back := END_TURN_BUTTON.instantiate() as TextureButton
-	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	box.add_child(back)
-	back.set_text("Menú")
-	back.pressed.connect(_on_result_back)
-
-func _result_label(text: String, settings: LabelSettings) -> Label:
-	var label := Label.new()
-	label.text = text
-	label.label_settings = settings
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	return label
+	_result_screen.show_result(title, detail, swatch, crowned_text)
 
 ## Vuelve al menú (el destino exacto está por confirmar).
 func _on_result_back() -> void:
@@ -817,44 +640,25 @@ func _owner_of_piece(piece_id: String) -> String:
 
 # --- Letrero del minimapa -------------------------------------------------------------------
 
-func _build_hover() -> void:
-	_hover = PanelContainer.new()
-	_hover.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hover.visible = false
-	_hud.add_child(_hover)
-	_hover_label = Label.new()
-	_hover_label.label_settings = LABEL_WHITE.duplicate() as LabelSettings
-	_hover_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hover.add_child(_hover_label)
-
 ## Si el ratón pasa cerca de una casilla del minimapa, muestra qué casilla es, de qué
 ## tipo (carta, zona segura, corredor, corona) y qué fichas hay en ella.
 func _update_hover() -> void:
-	if _hover == null or _layer == null or _minimap_panel == null:
-		return
 	var mouse := get_viewport().get_mouse_position()
 	if not _minimap_panel.is_visible_in_tree() or not _minimap_panel.get_global_rect().has_point(mouse):
-		_hover.visible = false
+		_hover.hide_info()
 		return
 	var local := _layer.get_local_mouse_position()
 	var best := -1
 	var best_distance := HOVER_RADIUS
 	for id in BoardMap.CELL_COUNT:
-		var distance :float= _layer.map_to_local(BoardMap.minimap_cell(id)).distance_to(local)
+		var distance: float = _layer.map_to_local(BoardMap.minimap_cell(id)).distance_to(local)
 		if distance <= best_distance:
 			best = id
 			best_distance = distance
 	if best < 0:
-		_hover.visible = false
+		_hover.hide_info()
 		return
-	var text := _cell_info(best)
-	if text != _hover_text:
-		_hover_text = text
-		_hover_label.text = text
-		_hover.reset_size()
-	_hover.visible = true
-	var limit := get_viewport().get_visible_rect().size - _hover.size
-	_hover.position = Vector2(minf(mouse.x + 12.0, limit.x), minf(mouse.y + 12.0, limit.y))
+	_hover.show_info(_cell_info(best), mouse)
 
 func _cell_info(id: int) -> String:
 	var lines := PackedStringArray(["Casilla %d" % id])

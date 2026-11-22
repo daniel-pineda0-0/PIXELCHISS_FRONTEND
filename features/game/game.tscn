@@ -7,3 +7,23 @@
 script = ExtResource("1_1j583")
 
 [node name="GameUI" parent="." unique_id=639558418 instance=ExtResource("1_v3hai")]
+
+[node name="Pieces" type="Node2D" parent="."]
+z_index = 10
+
+[node name="Halos" type="Node2D" parent="."]
+z_index = 9
+
+[node name="Targets" type="Node2D" parent="."]
+z_index = 12
+
+[node name="DebugOverlay" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="DebugLabel" type="Label" parent="DebugOverlay"]
+unique_name_in_owner = true
+offset_left = 4.0
+offset_top = 4.0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 8

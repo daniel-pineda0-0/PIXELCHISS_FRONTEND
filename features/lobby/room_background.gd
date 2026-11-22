@@ -125,8 +125,8 @@ func _face_side(direction: int) -> void:
 	sprite.texture = eye_side
 	eye.scale.x = -1.0 if direction > 0 else 1.0
 
-func _follow(offset: float, curve: Curve2D) -> void:
-	eye.position = curve.sample_baked(offset)
+func _follow(eye_offset: float, curve: Curve2D) -> void:
+	eye.position = curve.sample_baked(eye_offset)
 
 ## Curva suave que pasa por todos los puntos.
 func _smooth(points: Array) -> Curve2D:

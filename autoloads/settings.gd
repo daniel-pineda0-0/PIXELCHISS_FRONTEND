@@ -99,7 +99,10 @@ func apply_display() -> void:
 		return                                   # ya esta a ese tamano
 	DisplayServer.window_set_size(resolution)
 	var area := DisplayServer.screen_get_usable_rect(DisplayServer.window_get_current_screen())
-	var offset := Vector2i((area.size.x - resolution.x) / 2, (area.size.y - resolution.y) / 2)
+	var offset: Vector2i = Vector2i(
+		int((area.size.x - resolution.x) / 2.0),
+		int((area.size.y - resolution.y) / 2.0)
+	)
 	DisplayServer.window_set_position(area.position + offset)
 
 # --- Persistencia ---

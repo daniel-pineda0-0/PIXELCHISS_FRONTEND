@@ -22,7 +22,6 @@ const DISABLED_COLOR := Color(1, 1, 1, 0.6)
 const URGENT_COLOR := Color(1.0, 0.45, 0.4)
 
 @onready var _panel := $PromptContainer as PanelContainer
-@onready var _box := $PromptContainer/MarginContainer/VBoxContainer as VBoxContainer
 @onready var _prompt := $PromptContainer/MarginContainer/VBoxContainer/PromptLabel as Label
 @onready var _grid := $PromptContainer/MarginContainer/VBoxContainer/GridContainer as GridContainer
 
@@ -126,7 +125,7 @@ func _on_option_pressed(index: int) -> void:
 
 ## Cuenta atrás y estado de los botones (se llama cada frame mientras hay trivia).
 func _update_live(trivia: Dictionary) -> void:
-	var locked := _answered or GameNet.busy or not _is_mine(trivia)
+	var locked :bool= _answered or GameNet.busy or not _is_mine(trivia)
 	for i in _buttons.size():
 		_buttons[i].disabled = locked
 		_buttons[i].modulate = PICKED_COLOR if i == _picked else (DISABLED_COLOR if locked else Color.WHITE)

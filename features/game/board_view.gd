@@ -35,7 +35,7 @@ const PAN_SPEED := 420.0              # px/s al mover la cámara con las flechas
 ## Desplazamiento vertical de la cámara respecto al centro del chunk. Negativo = el
 ## mapa se ve más abajo. El suelo mide 5 filas (160 px) y el minimapa llega a y≈196:
 ## con -48 la fila del recorrido queda por debajo del minimapa. Ajustar aquí.
-const CAMERA_OFFSET_Y := -48.0
+const CAMERA_OFFSET_Y := -128.0
 const CLICK_RADIUS := 16.0            # qué tan cerca del centro hay que tocar una ficha o un destino
 const SLIDE_TIME_PER_CELL := 0.22     # segundos por casilla que recorre una ficha
 const SLIDE_TIME_MIN := 0.6

@@ -8,19 +8,19 @@ script = ExtResource("1_1j583")
 
 [node name="GameUI" parent="." unique_id=639558418 instance=ExtResource("1_v3hai")]
 
-[node name="Pieces" type="Node2D" parent="."]
+[node name="Pieces" type="Node2D" parent="." unique_id=50958163]
 z_index = 10
 
-[node name="Halos" type="Node2D" parent="."]
+[node name="Halos" type="Node2D" parent="." unique_id=1646853311]
 z_index = 9
 
-[node name="Targets" type="Node2D" parent="."]
+[node name="Targets" type="Node2D" parent="." unique_id=335952776]
 z_index = 12
 
-[node name="DebugOverlay" type="CanvasLayer" parent="."]
+[node name="DebugOverlay" type="CanvasLayer" parent="." unique_id=2073892603]
 layer = 100
 
-[node name="DebugLabel" type="Label" parent="DebugOverlay"]
+[node name="DebugLabel" type="Label" parent="DebugOverlay" unique_id=734596739]
 unique_name_in_owner = true
 offset_left = 4.0
 offset_top = 4.0

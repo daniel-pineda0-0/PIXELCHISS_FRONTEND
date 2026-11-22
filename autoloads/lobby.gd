@@ -14,6 +14,7 @@ signal left(reason: String)          # salida forzada: "kicked" o "closed"
 signal session_expired
 
 const STATUS_WAITING := "WAITING"
+const STATUS_STARTING := "STARTING"   # la SAGA con game-service aún no termina
 const STATUS_STARTED := "STARTED"
 const POLL_INTERVAL := 1.5
 const SEATS_BY_COUNT := {1: [0], 2: [0, 2], 3: [0, 1, 2], 4: [0, 1, 2, 3]}   # igual que lobby-service
@@ -163,13 +164,14 @@ func _set_lobby(lobby: Dictionary) -> void:
 	data = lobby
 	if is_new:
 		changed.emit(data)
-	if data.status == STATUS_STARTED and not _start_emitted:
+	if data.status == STATUS_STARTED and _has_game_id() and not _start_emitted:
 		_start_emitted = true
 		_poll_timer.stop()
 		started.emit(data)
 
 func _poll() -> void:
-	if _polling or not in_lobby() or data.status != STATUS_WAITING:
+	# Se sigue consultando en WAITING y STARTING; el timer se detiene al emitir `started`.
+	if _polling or not in_lobby() or _start_emitted:
 		return
 	_polling = true
 	var code: String = data.code
@@ -183,6 +185,10 @@ func _poll() -> void:
 		_forced_out(KICKED_NOTICE, "kicked")
 	elif r.status == 404:
 		_forced_out(CLOSED_NOTICE, "closed")
+
+func _has_game_id() -> bool:
+	var gid: Variant = data.get("game_id")
+	return gid is String and gid != ""
 
 func _forced_out(text: String, reason: String) -> void:
 	notice = text

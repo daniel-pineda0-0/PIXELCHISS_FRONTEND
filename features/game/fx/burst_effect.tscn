@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://features/game/fx/burst_effect.gd" id="script"]
+[ext_resource type="Texture2D" path="res://service/assets/fx/fx_ring.png" id="ring"]
+[ext_resource type="Texture2D" path="res://service/assets/fx/fx_disc.png" id="disc"]
+
+[node name="BurstEffect" type="Node2D"]
+script = ExtResource("script")
+
+[node name="Ring" type="Sprite2D" parent="."]
+scale = Vector2(0.45, 0.45)
+texture = ExtResource("ring")
+
+[node name="Core" type="Sprite2D" parent="."]
+unique_name_in_owner = true
+modulate = Color(1, 0.3, 0.3, 0.8)
+scale = Vector2(0.25, 0.25)
+texture = ExtResource("disc")

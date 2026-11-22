@@ -1,0 +1,37 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://features/game/fx/target_marker.gd" id="script"]
+[ext_resource type="Texture2D" path="res://service/assets/fx/fx_ring.png" id="ring"]
+[ext_resource type="Texture2D" path="res://service/assets/fx/fx_disc.png" id="disc"]
+[ext_resource type="FontFile" path="res://service/assets/ui/theme/PressStart2P.ttf" id="font"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_target"]
+resource_local_to_scene = true
+font = ExtResource("font")
+font_size = 8
+outline_size = 4
+outline_color = Color(0, 0, 0, 1)
+
+[node name="TargetMarker" type="Node2D"]
+script = ExtResource("script")
+
+[node name="Disc" type="Sprite2D" parent="."]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0.35)
+scale = Vector2(0.34, 0.34)
+texture = ExtResource("disc")
+
+[node name="Ring" type="Sprite2D" parent="."]
+unique_name_in_owner = true
+scale = Vector2(0.34, 0.34)
+texture = ExtResource("ring")
+
+[node name="Label" type="Label" parent="."]
+unique_name_in_owner = true
+offset_left = -14.0
+offset_top = -8.0
+offset_right = 14.0
+offset_bottom = 8.0
+label_settings = SubResource("LabelSettings_target")
+horizontal_alignment = 1
+vertical_alignment = 1

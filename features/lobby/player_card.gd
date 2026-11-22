@@ -14,14 +14,22 @@ enum Action { NONE, ADD_BOT, REMOVE_BOT, KICK }
 const KICK_BUTTON_SCENE := preload("res://features/lobby/kick_button.tscn")
 
 # Rojo, azul, verde, amarillo: mismo orden de asientos que usa el Game.
-# (el círculo es gris, por eso los tonos van más claros)
+# La barrita bajo el avatar usa estos tonos.
 const SEAT_COLORS: Array[Color] = [
-	Color(1.0, 0.45, 0.45),
-	Color(0.5, 0.65, 1.0),
-	Color(0.5, 0.95, 0.5),
-	Color(1.0, 1.0, 0.5),
+	Color(0.85, 0.22, 0.22),
+	Color(0.27, 0.45, 0.85),
+	Color(0.25, 0.70, 0.30),
+	Color(0.90, 0.70, 0.20),
 ]
-const EMPTY_COLOR := Color(1, 1, 1, 0.3)
+# Un avatar por asiento: calavera con cuernos y chaqueta del color del asiento.
+const AVATARS: Array[Texture2D] = [
+	preload("res://service/assets/ui/avatars/avatar_red.png"),
+	preload("res://service/assets/ui/avatars/avatar_blue.png"),
+	preload("res://service/assets/ui/avatars/avatar_green.png"),
+	preload("res://service/assets/ui/avatars/avatar_gold.png"),
+]
+const EMPTY_COLOR := Color(1, 1, 1, 0.25)
+const EMPTY_AVATAR := Color(0.45, 0.48, 0.56, 0.7)
 const READY_COLOR := Color(0.6, 1.0, 0.6)
 const WAITING_COLOR := Color(0.75, 0.75, 0.75)
 const KICK_TIME := 3.0
@@ -29,7 +37,7 @@ const NAME_MAX := 12
 
 @onready var name_label:Label=%NameLabel
 @onready var crown:TextureRect=%Crown
-@onready var color_circle:TextureRect=%ColorCircle
+@onready var color_bar: ColorRect = %ColorBar
 @onready var avatar:TextureRect=%Avatar
 @onready var player_button: Button = $PlayerButton
 
@@ -54,7 +62,10 @@ func show_player(player: Dictionary, seat: int, can_manage: bool, is_me: bool) -
 	var is_host: bool = player.role == "HOST"
 	name_label.text = _short_name(player.display_name, is_me)
 	crown.self_modulate = Color.WHITE if is_host else Color.TRANSPARENT
-	color_circle.self_modulate = SEAT_COLORS[seat]
+	seat = clampi(seat, 0, AVATARS.size() - 1)
+	color_bar.color = SEAT_COLORS[seat]
+	avatar.texture = AVATARS[seat]
+	avatar.modulate = Color.WHITE
 	# El estado se lee en el color del nombre: blanco anfitrión, verde listo, gris espera.
 	if is_host:
 		name_label.self_modulate = Color.WHITE
@@ -68,11 +79,13 @@ func show_player(player: Dictionary, seat: int, can_manage: bool, is_me: bool) -
 		_set_action(Action.NONE)
 
 ## Cupo libre. El anfitrión puede llenarlo con un bot (US-005).
-func show_empty(can_add_bot: bool) -> void:
+func show_empty(can_add_bot: bool, seat := 0) -> void:
 	name_label.text = "+ Bot" if can_add_bot else "Esperando..."
 	name_label.self_modulate = Color.WHITE if can_add_bot else WAITING_COLOR
 	crown.self_modulate = Color.TRANSPARENT
-	color_circle.self_modulate = EMPTY_COLOR
+	color_bar.color = EMPTY_COLOR
+	avatar.texture = AVATARS[clampi(seat, 0, AVATARS.size() - 1)]
+	avatar.modulate = EMPTY_AVATAR
 	_set_action(Action.ADD_BOT if can_add_bot else Action.NONE)
 
 func _short_name(display_name: String, is_me: bool) -> String:

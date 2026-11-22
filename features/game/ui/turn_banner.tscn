@@ -1,0 +1,30 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://features/game/ui/turn_banner.gd" id="script"]
+[ext_resource type="FontFile" path="res://service/assets/ui/theme/PressStart2P.ttf" id="font"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_turn"]
+resource_local_to_scene = true
+font = ExtResource("font")
+font_size = 8
+
+[node name="TurnBanner" type="PanelContainer"]
+layout_mode = 3
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -100.0
+offset_top = 16.0
+offset_right = 100.0
+offset_bottom = 39.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("script")
+
+[node name="Label" type="Label" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+text = "Conectando..."
+label_settings = SubResource("LabelSettings_turn")
+horizontal_alignment = 1

@@ -1,0 +1,105 @@
+[gd_scene format=3 uid="uid://dwvbpu53ia6qc"]
+
+[ext_resource type="Script" uid="uid://b6rtw6b6v60h7" path="res://features/game/trivia_ui.gd" id="1_xfy53"]
+[ext_resource type="FontFile" uid="uid://bbbnsoretj02p" path="res://service/assets/ui/theme/PressStart2P.ttf" id="font"]
+
+[sub_resource type="LabelSettings" id="LS_who"]
+resource_local_to_scene = true
+font = ExtResource("font")
+font_size = 8
+
+[sub_resource type="LabelSettings" id="LS_prompt"]
+resource_local_to_scene = true
+font = ExtResource("font")
+font_size = 8
+
+[sub_resource type="LabelSettings" id="LS_timer"]
+resource_local_to_scene = true
+font = ExtResource("font")
+font_size = 8
+
+[sub_resource type="LabelSettings" id="LS_result"]
+resource_local_to_scene = true
+font = ExtResource("font")
+font_size = 8
+
+[node name="TriviaUI" type="Control" unique_id=51980602]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_xfy53")
+
+[node name="PromptContainer" type="PanelContainer" parent="." unique_id=1529705539]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -58.0
+offset_top = -68.5
+offset_right = 58.0
+offset_bottom = 68.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="PromptContainer" unique_id=249130439]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PromptContainer/MarginContainer" unique_id=569722191]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="WhoLabel" type="Label" parent="PromptContainer/MarginContainer/VBoxContainer" unique_id=1370639348]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(284, 0)
+layout_mode = 2
+label_settings = SubResource("LS_who")
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="PromptLabel" type="Label" parent="PromptContainer/MarginContainer/VBoxContainer" unique_id=542677129]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(284, 0)
+layout_mode = 2
+text = "Pregunta"
+label_settings = SubResource("LS_prompt")
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="GridContainer" type="GridContainer" parent="PromptContainer/MarginContainer/VBoxContainer" unique_id=835449166]
+layout_mode = 2
+theme_override_constants/h_separation = 4
+theme_override_constants/v_separation = 4
+columns = 2
+
+[node name="TimerLabel" type="Label" parent="PromptContainer/MarginContainer/VBoxContainer" unique_id=619502561]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(284, 0)
+layout_mode = 2
+label_settings = SubResource("LS_timer")
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="ResultLabel" type="Label" parent="PromptContainer/MarginContainer/VBoxContainer" unique_id=59415183]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(284, 0)
+layout_mode = 2
+label_settings = SubResource("LS_result")
+horizontal_alignment = 1
+autowrap_mode = 3

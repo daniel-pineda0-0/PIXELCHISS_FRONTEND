@@ -1,0 +1,103 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://features/game/card_panel.gd" id="script"]
+[ext_resource type="FontFile" path="res://service/assets/ui/theme/PressStart2P.ttf" id="font"]
+
+[sub_resource type="LabelSettings" id="LS_kind"]
+resource_local_to_scene = true
+font = ExtResource("font")
+font_size = 8
+
+[sub_resource type="LabelSettings" id="LS_text"]
+resource_local_to_scene = true
+font = ExtResource("font")
+font_size = 8
+
+[sub_resource type="LabelSettings" id="LS_timer"]
+resource_local_to_scene = true
+font = ExtResource("font")
+font_size = 8
+
+[node name="CardPanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("script")
+
+[node name="Panel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(232, 0)
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -116.0
+offset_top = 44.0
+offset_right = 116.0
+offset_bottom = 44.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="Panel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 6
+
+[node name="Box" type="VBoxContainer" parent="Panel/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="KindLabel" type="Label" parent="Panel/Margin/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+label_settings = SubResource("LS_kind")
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="TitleLabel" type="Label" parent="Panel/Margin/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+label_settings = SubResource("LS_text")
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="DescLabel" type="Label" parent="Panel/Margin/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+label_settings = SubResource("LS_text")
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="HintLabel" type="Label" parent="Panel/Margin/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+label_settings = SubResource("LS_text")
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="TimerLabel" type="Label" parent="Panel/Margin/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+label_settings = SubResource("LS_timer")
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Choices" type="VBoxContainer" parent="Panel/Margin/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 3

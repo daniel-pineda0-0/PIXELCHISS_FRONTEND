@@ -1,0 +1,66 @@
+[gd_scene format=3 uid="uid://bv0pofir07frb"]
+
+[ext_resource type="Script" uid="uid://dphgpypqwe285" path="res://features/game/dices.gd" id="1_5r4yt"]
+[ext_resource type="Texture2D" uid="uid://bc65imj35ywsi" path="res://service/assets/ui/icons/dice_sprites.png" id="2_154ks"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8xue2"]
+atlas = ExtResource("2_154ks")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5r4yt"]
+atlas = ExtResource("2_154ks")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_154ks"]
+atlas = ExtResource("2_154ks")
+region = Rect2(32, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_100un"]
+atlas = ExtResource("2_154ks")
+region = Rect2(48, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_y75a2"]
+atlas = ExtResource("2_154ks")
+region = Rect2(64, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i6wgy"]
+atlas = ExtResource("2_154ks")
+region = Rect2(80, 0, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_52djv"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8xue2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5r4yt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_154ks")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_100un")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_y75a2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_i6wgy")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="dices" type="Node2D" unique_id=1637022031]
+script = ExtResource("1_5r4yt")
+
+[node name="Dice" type="AnimatedSprite2D" parent="." unique_id=1327663235]
+position = Vector2(-10, 0)
+sprite_frames = SubResource("SpriteFrames_52djv")
+frame_progress = 0.646859
+
+[node name="Dice2" type="AnimatedSprite2D" parent="." unique_id=894983577]
+position = Vector2(10, 0)
+sprite_frames = SubResource("SpriteFrames_52djv")

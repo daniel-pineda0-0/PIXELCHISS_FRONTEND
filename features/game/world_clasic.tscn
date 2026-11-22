@@ -1,5 +1,7 @@
 [gd_scene format=3 uid="uid://brhyb6irmxjn1"]
 
+[ext_resource type="PackedScene" uid="uid://cm6yg15hqputh" path="res://features/game/player_ground_clasic.tscn" id="1_dpdgd"]
+
 [node name="WorldClasic" type="Node2D" unique_id=1968728586]
 
 [node name="Parallax2D_back" type="Parallax2D" parent="." unique_id=1287994153]
@@ -10,6 +12,15 @@
 
 [node name="level" type="Node2D" parent="." unique_id=1418348868]
 
-[node name="ground" type="TileMapLayer" parent="level" unique_id=1804345327]
+[node name="PlayerGroundClasic" parent="level" unique_id=59641989 instance=ExtResource("1_dpdgd")]
+
+[node name="PlayerGroundClasic2" parent="level" unique_id=469398079 instance=ExtResource("1_dpdgd")]
+number_part = -1
+
+[node name="PlayerGroundClasic3" parent="level" unique_id=19873109 instance=ExtResource("1_dpdgd")]
+number_part = -2
+
+[node name="PlayerGroundClasic4" parent="level" unique_id=769420105 instance=ExtResource("1_dpdgd")]
+number_part = -3
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1228748300]

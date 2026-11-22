@@ -2,73 +2,83 @@
 
 [ext_resource type="Texture2D" uid="uid://bl4aw1cgqd51t" path="res://service/assets/ui/icons/ph_player_card_crown.png" id="1_g7hnm"]
 [ext_resource type="Script" uid="uid://djs3qcsnsnhju" path="res://features/lobby/player_card.gd" id="1_xlxat"]
-[ext_resource type="Texture2D" uid="uid://gmo3yhvj8tta" path="res://service/assets/ui/icons/ph_player_card_color_circle.png" id="2_xlxat"]
+[ext_resource type="Texture2D" path="res://service/assets/ui/avatars/avatar_frame.png" id="2_frame"]
 [ext_resource type="LabelSettings" uid="uid://dft2d8hc78d73" path="res://service/assets/ui/prefabs/PixelFontWhite.tres" id="4_xlxat"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xlxat"]
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_guqmh"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_bhygp"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_dpvdh"]
-
-[node name="PlayerCard" type="Control" unique_id=2081797781]
-custom_minimum_size = Vector2(58, 68)
-propagate_maximum_size = true
+[node name="PlayerCard" type="Control"]
+custom_minimum_size = Vector2(58, 72)
 layout_mode = 3
 anchors_preset = 0
-offset_right = 10.0
-offset_bottom = 28.0
+offset_right = 58.0
+offset_bottom = 72.0
 size_flags_horizontal = 4
 size_flags_vertical = 4
 script = ExtResource("1_xlxat")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1861133662]
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -28.0
-offset_right = 28.0
-offset_bottom = 74.0
+offset_left = -29.0
+offset_right = 29.0
 grow_horizontal = 2
-theme_override_constants/separation = 1
-alignment = 1
-
-[node name="AvatarContainer" type="CenterContainer" parent="VBoxContainer" unique_id=656555784]
-layout_mode = 2
-size_flags_horizontal = 4
-
-[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/AvatarContainer" unique_id=575539700]
-layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="Crown" type="TextureRect" parent="VBoxContainer/AvatarContainer/VBoxContainer" unique_id=1604811009]
-unique_name_in_owner = true
+[node name="FrameBox" type="Control" parent="VBoxContainer"]
+custom_minimum_size = Vector2(46, 50)
 layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+
+[node name="Frame" type="TextureRect" parent="VBoxContainer/FrameBox"]
+layout_mode = 0
+offset_right = 46.0
+offset_bottom = 50.0
+mouse_filter = 2
+texture = ExtResource("2_frame")
+
+[node name="Avatar" type="TextureRect" parent="VBoxContainer/FrameBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 5.0
+offset_top = 5.0
+offset_right = 41.0
+offset_bottom = 45.0
+mouse_filter = 2
+
+[node name="ColorBar" type="ColorRect" parent="VBoxContainer/FrameBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 5.0
+offset_top = 42.0
+offset_right = 41.0
+offset_bottom = 45.0
+mouse_filter = 2
+color = Color(1, 1, 1, 0.3)
+
+[node name="Crown" type="TextureRect" parent="VBoxContainer/FrameBox"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 15.0
+offset_top = -5.0
+offset_right = 31.0
+offset_bottom = 3.0
+mouse_filter = 2
 texture = ExtResource("1_g7hnm")
-stretch_mode = 3
 
-[node name="ColorCircle" type="TextureRect" parent="VBoxContainer/AvatarContainer/VBoxContainer" unique_id=250684198]
-unique_name_in_owner = true
-layout_mode = 2
-texture = ExtResource("2_xlxat")
-stretch_mode = 5
-
-[node name="Avatar" type="TextureRect" parent="VBoxContainer/AvatarContainer/VBoxContainer" unique_id=412412062]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="NamePanel" type="PanelContainer" parent="VBoxContainer" unique_id=2096667097]
+[node name="NamePanel" type="PanelContainer" parent="VBoxContainer"]
 clip_contents = true
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
+mouse_filter = 2
+theme_type_variation = &"NameTag"
 
-[node name="NameLabel" type="Label" parent="VBoxContainer/NamePanel" unique_id=761307117]
+[node name="NameLabel" type="Label" parent="VBoxContainer/NamePanel"]
 unique_name_in_owner = true
-texture_filter = 2
 custom_maximum_size = Vector2(58, 20)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -78,16 +88,18 @@ label_settings = ExtResource("4_xlxat")
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="PlayerButton" type="Button" parent="." unique_id=1788735639]
+[node name="PlayerButton" type="Button" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+focus_mode = 0
 theme_override_styles/normal = SubResource("StyleBoxEmpty_xlxat")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_guqmh")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_bhygp")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_dpvdh")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_xlxat")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_xlxat")
+theme_override_styles/disabled = SubResource("StyleBoxEmpty_xlxat")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_xlxat")
 
 [connection signal="pressed" from="PlayerButton" to="." method="_on_player_button_pressed"]

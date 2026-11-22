@@ -21,16 +21,30 @@ func try_restore() -> bool:
 	refresh_token = cfg.get_value("auth", "refresh", "")
 	return await refresh() and await load_profile()
 
+## Una sola renovación a la vez (guía §1.3): si varias peticiones reciben 401 juntas, solo la
+## primera llama a /api/refresh y las demás esperan y comparten su resultado.
+signal _refresh_finished(ok: bool)
+var _refreshing := false
+
 func refresh() -> bool:
 	if refresh_token == "":
 		return false
+	if _refreshing:
+		return await _refresh_finished
+	_refreshing = true
+	var ok := await _do_refresh()
+	_refreshing = false
+	_refresh_finished.emit(ok)
+	return ok
+
+func _do_refresh() -> bool:
 	var r = await Api.request(HTTPClient.METHOD_POST, "/api/refresh",
 			{"refreshToken": refresh_token}, false)
 	if not r.ok:
 		if r.status == 401:
-			clear()
+			clear()                       # el refresh ya no vale: sesión fuera y pedir login
 		return false
-	access_token = r.data.accessToken
+	access_token = r.data.accessToken     # el refresh NO rota: sigue siendo el mismo
 	return true
 
 func load_profile() -> bool:
@@ -40,6 +54,16 @@ func load_profile() -> bool:
 	profile = r.data
 	logged_in.emit()
 	return true
+
+## Guarda el nombre de jugador en el servidor (PUT /api/auth/me/display-name).
+## El servidor acepta de 3 a 24 caracteres: letras sin tilde, numeros o guion bajo.
+## Devuelve la respuesta de Api.request; si va bien, actualiza el perfil local.
+func set_display_name(display_name: String) -> Dictionary:
+	var r: Dictionary = await Api.request(HTTPClient.METHOD_PUT,
+			"/api/auth/me/display-name", {"displayName": display_name})
+	if r.ok and r.data is Dictionary:
+		profile = r.data
+	return r
 
 func logout() -> void:
 	if refresh_token != "":

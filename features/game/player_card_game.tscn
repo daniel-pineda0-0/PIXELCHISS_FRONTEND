@@ -1,40 +1,67 @@
 [gd_scene format=3 uid="uid://dxv2es6l706c8"]
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_wbvff"]
+[ext_resource type="PackedScene" uid="uid://bv0pofir07frb" path="res://features/game/dices.tscn" id="1_3xn04"]
+[ext_resource type="Script" uid="uid://dpg8m65xq71g2" path="res://features/game/player_card_game.gd" id="1_7dq3g"]
+[ext_resource type="FontFile" path="res://service/assets/ui/theme/PressStart2P.ttf" id="font"]
+[ext_resource type="LabelSettings" path="res://service/assets/ui/prefabs/PixelFontWhite.tres" id="white"]
+[ext_resource type="Texture2D" uid="uid://gmo3yhvj8tta" path="res://service/assets/ui/icons/ph_player_card_color_circle.png" id="1_r1g4g"]
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_3xn04"]
+[sub_resource type="LabelSettings" id="LS_effect"]
+resource_local_to_scene = true
+font = ExtResource("font")
+font_size = 8
+font_color = Color(1, 0.5, 0.45, 1)
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_r1g4g"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7dq3g"]
-
-[node name="Control" type="Control" unique_id=939403117]
+[node name="PlayerCardGame" type="Control" unique_id=939403117]
+custom_minimum_size = Vector2(40, 0)
 layout_mode = 3
 anchors_preset = 0
+script = ExtResource("1_7dq3g")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1890626025]
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1683283363]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
-[node name="Dices" type="PanelContainer" parent="HBoxContainer" unique_id=1138294747]
+[node name="PlayerCard" type="TextureRect" parent="VBoxContainer" unique_id=1856549016]
+unique_name_in_owner = true
+layout_mode = 2
+texture = ExtResource("1_r1g4g")
+expand_mode = 4
+
+[node name="Avatar" type="TextureRect" parent="VBoxContainer/PlayerCard" unique_id=2059775717]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Dices" type="PanelContainer" parent="VBoxContainer" unique_id=1138294747]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 18)
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 4
 
-[node name="Dice" type="AnimatedSprite2D" parent="HBoxContainer/Dices" unique_id=983197131]
-
-[node name="PlayerButton" type="Button" parent="HBoxContainer/Dices" unique_id=1340409881]
+[node name="AspectRatioContainer" type="AspectRatioContainer" parent="VBoxContainer/Dices" unique_id=532710544]
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxEmpty_wbvff")
-theme_override_styles/hover = SubResource("StyleBoxEmpty_3xn04")
-theme_override_styles/disabled = SubResource("StyleBoxEmpty_r1g4g")
-theme_override_styles/focus = SubResource("StyleBoxEmpty_7dq3g")
+size_flags_horizontal = 4
+size_flags_vertical = 4
 
-[node name="PlayerCard" type="TextureRect" parent="HBoxContainer" unique_id=1856549016]
+[node name="DiceRoll" parent="VBoxContainer/Dices/AspectRatioContainer" unique_id=1637022031 instance=ExtResource("1_3xn04")]
+unique_name_in_owner = true
+
+[node name="CrownLabel" type="Label" parent="VBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
+tooltip_text = "Fichas coronadas"
+mouse_filter = 0
+text = "0/4"
+label_settings = ExtResource("white")
+horizontal_alignment = 1
 
-[node name="Avatar" type="TextureRect" parent="HBoxContainer/PlayerCard" unique_id=2059775717]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="EffectLabel" type="Label" parent="VBoxContainer"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 0
+label_settings = SubResource("LS_effect")
+horizontal_alignment = 1

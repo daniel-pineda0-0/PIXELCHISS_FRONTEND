@@ -1,5 +1,7 @@
 [gd_scene format=3 uid="uid://d1b5hb7urtepc"]
 
+[ext_resource type="PackedScene" uid="uid://cpslhnjct30os" path="res://features/game/player_ground_cience.tscn" id="1_0ldwk"]
+
 [node name="WorldCience" type="Node2D" unique_id=1968728586]
 
 [node name="Parallax2D_back" type="Parallax2D" parent="." unique_id=1287994153]
@@ -10,6 +12,15 @@
 
 [node name="level" type="Node2D" parent="." unique_id=1418348868]
 
-[node name="ground" type="TileMapLayer" parent="level" unique_id=1804345327]
+[node name="PlayerGroundCience" parent="level" unique_id=1598695971 instance=ExtResource("1_0ldwk")]
+
+[node name="PlayerGroundCience2" parent="level" unique_id=301230024 instance=ExtResource("1_0ldwk")]
+number_part = -1
+
+[node name="PlayerGroundCience3" parent="level" unique_id=904062293 instance=ExtResource("1_0ldwk")]
+number_part = -2
+
+[node name="PlayerGroundCience4" parent="level" unique_id=2067415554 instance=ExtResource("1_0ldwk")]
+number_part = -3
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1228748300]

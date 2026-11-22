@@ -1,8 +1,37 @@
-[gd_scene format=3 uid="uid://c38is0wvg5vmn"]
+[gd_scene format=4 uid="uid://c38is0wvg5vmn"]
 
 [ext_resource type="Script" uid="uid://bn24uubh4qxut" path="res://features/game/game_ui.gd" id="1_mvj5b"]
-[ext_resource type="PackedScene" uid="uid://b1pnp7ocd4y5" path="res://features/game/game_pice.tscn" id="2_7rcnj"]
+[ext_resource type="Texture2D" uid="uid://cakj0u08p4l1j" path="res://service/assets/ui/theme/ph_minimap_tile.png" id="2_hukp0"]
 [ext_resource type="PackedScene" uid="uid://dxv2es6l706c8" path="res://features/game/player_card_game.tscn" id="3_hukp0"]
+[ext_resource type="PackedScene" uid="uid://bv0pofir07frb" path="res://features/game/dices.tscn" id="4_6chcw"]
+[ext_resource type="PackedScene" uid="uid://dwvbpu53ia6qc" path="res://features/game/trivia_ui.tscn" id="4_7rcnj"]
+[ext_resource type="PackedScene" uid="uid://cpvu08xupmhro" path="res://features/game/dice_selector.tscn" id="7_g3kas"]
+[ext_resource type="PackedScene" path="res://features/game/ui/turn_banner.tscn" id="8_banner"]
+[ext_resource type="PackedScene" path="res://features/game/ui/end_turn_button.tscn" id="9_endturn"]
+[ext_resource type="PackedScene" path="res://features/game/ui/toast.tscn" id="10_toast"]
+[ext_resource type="PackedScene" path="res://features/game/ui/cell_tooltip.tscn" id="11_tip"]
+[ext_resource type="PackedScene" path="res://features/game/ui/result_screen.tscn" id="12_result"]
+[ext_resource type="PackedScene" path="res://features/game/card_panel.tscn" id="13_card"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_6chcw"]
+texture = ExtResource("2_hukp0")
+texture_region_size = Vector2i(8, 8)
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+0:3/0 = 0
+1:3/0 = 0
+2:3/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_hn4xe"]
+tile_size = Vector2i(8, 8)
+sources/0 = SubResource("TileSetAtlasSource_6chcw")
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6chcw"]
 
@@ -16,6 +45,7 @@
 script = ExtResource("1_mvj5b")
 
 [node name="GameHUD" type="Control" parent="." unique_id=1461501867]
+unique_name_in_owner = true
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -23,7 +53,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="GameHUD" unique_id=18949452]
+[node name="HUDMargin" type="MarginContainer" parent="GameHUD" unique_id=18949452]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -35,38 +66,130 @@ theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 16
 
-[node name="MiniMap" type="PanelContainer" parent="GameHUD/MarginContainer" unique_id=361813416]
+[node name="MiniMap" type="PanelContainer" parent="GameHUD/HUDMargin" unique_id=361813416]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 180)
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 0
 
-[node name="AspectRatioContainer" type="AspectRatioContainer" parent="GameHUD/MarginContainer/MiniMap" unique_id=1227834532]
+[node name="MarginContainer" type="MarginContainer" parent="GameHUD/HUDMargin/MiniMap" unique_id=2064187536]
 layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
 
-[node name="TileMapLayer" type="TileMapLayer" parent="GameHUD/MarginContainer/MiniMap/AspectRatioContainer" unique_id=1511033763]
+[node name="AspectRatioContainer" type="AspectRatioContainer" parent="GameHUD/HUDMargin/MiniMap/MarginContainer" unique_id=1227834532]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 
-[node name="GamePice" parent="GameHUD/MarginContainer/MiniMap/AspectRatioContainer" unique_id=189274474 instance=ExtResource("2_7rcnj")]
+[node name="TileMapLayer" type="TileMapLayer" parent="GameHUD/HUDMargin/MiniMap/MarginContainer/AspectRatioContainer" unique_id=1511033763]
+unique_name_in_owner = true
+tile_map_data = PackedByteArray("AAD1//b/AAAAAAEAAAD1//f/AAAAAAEAAAD1//j/AAAAAAEAAAD1//n/AAAAAAEAAAD1//r/AAAAAAEAAAD1//v/AAAAAAEAAAD1//z/AAAAAAEAAAD1//3/AAAAAAEAAAD1//7/AAAAAAMAAAD1////AAABAAMAAAD1/wAAAAAAAAMAAGD1/wEAAAAAAAEAAAD1/wIAAAAAAAEAAAD1/wMAAAAAAAEAAAD1/wQAAAAAAAEAAAD1/wUAAAAAAAEAAAD1/wYAAAAAAAEAAAD1/wcAAAAAAAEAAAD1/wgAAAAAAAEAAAD1/wkAAAAAAAIAAAD2//b/AAABAAEAAAD2//f/AAABAAEAAAD2//j/AAABAAEAAAD2//n/AAABAAEAAAD2//r/AAABAAEAAAD2//v/AAABAAEAAAD2//z/AAABAAEAAAD2//3/AAABAAEAAAD2//7/AAAAAAMAAAD2////AAABAAMAAAD2/wAAAAAAAAMAAGD2/wEAAAABAAEAAAD2/wIAAAABAAEAAAD2/wMAAAABAAEAAAD2/wQAAAABAAEAAAD2/wUAAAABAAEAAAD2/wYAAAABAAEAAAD2/wcAAAABAAEAAAD2/wgAAAABAAEAAAD2/wkAAAABAAIAAAD3//b/AAABAAEAAAD3//f/AAABAAEAAAD3//j/AAABAAEAAAD3//n/AAABAAEAAAD3//r/AAABAAEAAAD3//v/AAABAAEAAAD3//z/AAABAAEAAAD3//3/AAABAAEAAAD3//7/AAAAAAMAAAD3////AAABAAMAAAD3/wAAAAAAAAMAAGD3/wEAAAABAAEAAAD3/wIAAAABAAEAAAD3/wMAAAABAAEAAAD3/wQAAAABAAEAAAD3/wUAAAABAAEAAAD3/wYAAAABAAEAAAD3/wcAAAABAAEAAAD3/wgAAAABAAEAAAD3/wkAAAABAAIAAAD4//b/AAABAAEAAAD4//f/AAABAAEAAAD4//j/AAABAAEAAAD4//n/AAABAAEAAAD4//r/AAABAAEAAAD4//v/AAABAAEAAAD4//z/AAABAAEAAAD4//3/AAABAAEAAAD4//7/AAAAAAMAAAD4////AAABAAMAAAD4/wAAAAAAAAMAAGD4/wEAAAABAAEAAAD4/wIAAAABAAEAAAD4/wMAAAABAAEAAAD4/wQAAAABAAEAAAD4/wUAAAABAAEAAAD4/wYAAAABAAEAAAD4/wcAAAABAAEAAAD4/wgAAAABAAEAAAD4/wkAAAABAAIAAAD5//b/AAABAAEAAAD5//f/AAABAAEAAAD5//j/AAABAAEAAAD5//n/AAABAAEAAAD5//r/AAABAAEAAAD5//v/AAABAAEAAAD5//z/AAABAAEAAAD5//3/AAABAAEAAAD5//7/AAABAAMAAAD5////AAABAAMAAAD5/wAAAAACAAMAAAD5/wEAAAABAAEAAAD5/wIAAAAAAAAAAAD5/wMAAAAAAAIAAAD5/wQAAAABAAEAAAD5/wUAAAABAAEAAAD5/wYAAAABAAEAAAD5/wcAAAABAAEAAAD5/wgAAAABAAEAAAD5/wkAAAABAAIAAAD6//b/AAABAAEAAAD6//f/AAABAAEAAAD6//j/AAABAAEAAAD6//n/AAABAAEAAAD6//r/AAABAAEAAAD6//v/AAABAAEAAAD6//z/AAABAAEAAAD6//3/AAABAAEAAAD6//7/AAAAAAMAAAD6////AAABAAMAAAD6/wAAAAAAAAMAAAD6/wEAAAABAAEAAAD6/wIAAAACAAAAAAD6/wMAAAACAAIAAAD6/wQAAAABAAEAAAD6/wUAAAABAAEAAAD6/wYAAAABAAEAAAD6/wcAAAABAAEAAAD6/wgAAAABAAEAAAD6/wkAAAABAAIAAAD7//b/AAABAAEAAAD7//f/AAABAAEAAAD7//j/AAABAAEAAAD7//n/AAAAAAAAAAD7//r/AAAAAAIAAAD7//v/AAABAAEAAAD7//z/AAABAAEAAAD7//3/AAABAAEAAAD7//7/AAAAAAMAAAD7////AAABAAMAAAD7/wAAAAAAAAMAAAD7/wEAAAABAAEAAAD7/wIAAAABAAEAAAD7/wMAAAABAAEAAAD7/wQAAAABAAEAAAD7/wUAAAABAAEAAAD7/wYAAAABAAEAAAD7/wcAAAABAAEAAAD7/wgAAAABAAEAAAD7/wkAAAABAAIAAAD8//b/AAABAAEAAAD8//f/AAABAAEAAAD8//j/AAABAAEAAAD8//n/AAACAAAAAAD8//r/AAACAAIAAAD8//v/AAABAAEAAAD8//z/AAABAAEAAAD8//3/AAAAAAMAAAD8//7/AAABAAIAAAD8////AAABAAMAAAD8/wAAAAABAAAAAAD8/wEAAAAAAAMAAAD8/wIAAAABAAEAAAD8/wMAAAABAAEAAAD8/wQAAAABAAEAAAD8/wUAAAABAAEAAAD8/wYAAAABAAEAAAD8/wcAAAABAAEAAAD8/wgAAAABAAEAAAD8/wkAAAABAAIAAAD9//b/AAABAAEAAAD9//f/AAABAAEAAAD9//j/AAABAAEAAAD9//n/AAABAAEAAAD9//r/AAABAAEAAAD9//v/AAABAAEAAAD9//z/AAAAAAMAAAD9//3/AAABAAEAAAD9//7/AAACAAIAAAD9////AAACAAMAAAD9/wAAAAACAAAAAAD9/wEAAAABAAEAAAD9/wIAAAAAAAMAAAD9/wMAAAABAAEAAAD9/wQAAAABAAEAAAD9/wUAAAABAAEAAAD9/wYAAAABAAEAAAD9/wcAAAABAAEAAAD9/wgAAAABAAEAAAD9/wkAAAABAAIAAAD+//b/AAAAAAMAAAD+//f/AAAAAAMAAAD+//j/AAAAAAMAAAD+//n/AAACAAMAAAD+//r/AAAAAAMAAAD+//v/AAAAAAMAAAD+//z/AAACAAEAAAD+//3/AAACAAIAAAD+//7/AAAAAAAAAAD+////AAAAAAEAAAD+/wAAAAAAAAIAAAD+/wEAAAACAAAAAAD+/wIAAAACAAEAAAD+/wMAAAAAAAMAAAD+/wQAAAAAAAMAAAD+/wUAAAABAAMAAAD+/wYAAAAAAAMAAAD+/wcAAAAAAAMAAAD+/wgAAAAAAAMAAAD+/wkAAAAAAAMAAAD///b/AAABAAMAAAD///f/AAABAAMAAAD///j/AAABAAMAAAD///n/AAABAAMAAAD///r/AAABAAMAAAD///v/AAABAAMAAAD///z/AAABAAMAAAD///3/AAACAAMAAAD///7/AAABAAAAAAD/////AAABAAEAAAD//wAAAAABAAEAAAD//wEAAAACAAMAAAD//wIAAAABAAMAAAD//wMAAAABAAMAAAD//wQAAAABAAMAAAD//wUAAAABAAMAAAD//wYAAAABAAMAAAD//wcAAAABAAMAAAD//wgAAAABAAMAAAD//wkAAAABAAMAAAAAAPb/AAAAAAMAAAAAAPf/AAAAAAMAAAAAAPj/AAAAAAMAAAAAAPn/AAABAAMAAAAAAPr/AAAAAAMAAAAAAPv/AAAAAAMAAAAAAPz/AAAAAAEAAAAAAP3/AAAAAAIAAAAAAP7/AAACAAAAAAAAAP//AAACAAEAAAAAAAAAAAACAAIAAAAAAAEAAAAAAAAAAAAAAAIAAAAAAAEAAAAAAAMAAAAAAAMAAAAAAAQAAAAAAAMAAAAAAAUAAAACAAMAAAAAAAYAAAAAAAMAAAAAAAcAAAAAAAMAAAAAAAgAAAAAAAMAAAAAAAkAAAAAAAMAAAABAPb/AAABAAEAAAABAPf/AAABAAEAAAABAPj/AAABAAEAAAABAPn/AAABAAEAAAABAPr/AAABAAEAAAABAPv/AAABAAEAAAABAPz/AAAAAAMAAAABAP3/AAABAAEAAAABAP7/AAAAAAIAAAABAP//AAACAAMAAAABAAAAAAAAAAAAAAABAAEAAAABAAEAAAABAAIAAAAAAAMAAAABAAMAAAABAAEAAAABAAQAAAABAAEAAAABAAUAAAABAAEAAAABAAYAAAABAAEAAAABAAcAAAABAAEAAAABAAgAAAABAAEAAAABAAkAAAABAAIAAAACAPb/AAABAAEAAAACAPf/AAABAAEAAAACAPj/AAABAAEAAAACAPn/AAABAAEAAAACAPr/AAABAAEAAAACAPv/AAABAAEAAAACAPz/AAABAAEAAAACAP3/AAAAAAMAAAACAP7/AAABAAIAAAACAP//AAABAAMAAAACAAAAAAABAAAAAAACAAEAAAAAAAMAAAACAAIAAAABAAEAAAACAAMAAAABAAEAAAACAAQAAAAAAAAAAAACAAUAAAAAAAIAAAACAAYAAAABAAEAAAACAAcAAAABAAEAAAACAAgAAAABAAEAAAACAAkAAAABAAIAAAADAPb/AAABAAEAAAADAPf/AAABAAEAAAADAPj/AAABAAEAAAADAPn/AAABAAEAAAADAPr/AAABAAEAAAADAPv/AAABAAEAAAADAPz/AAABAAEAAAADAP3/AAABAAEAAAADAP7/AAAAAAMAAAADAP//AAABAAMAAAADAAAAAAAAAAMAAAADAAEAAAABAAEAAAADAAIAAAABAAEAAAADAAMAAAABAAEAAAADAAQAAAACAAAAAAADAAUAAAACAAIAAAADAAYAAAABAAEAAAADAAcAAAABAAEAAAADAAgAAAABAAEAAAADAAkAAAABAAIAAAAEAPb/AAABAAEAAAAEAPf/AAABAAEAAAAEAPj/AAABAAEAAAAEAPn/AAABAAEAAAAEAPr/AAABAAEAAAAEAPv/AAAAAAAAAAAEAPz/AAAAAAIAAAAEAP3/AAABAAEAAAAEAP7/AAAAAAMAAAAEAP//AAABAAMAAAAEAAAAAAAAAAMAAAAEAAEAAAABAAEAAAAEAAIAAAABAAEAAAAEAAMAAAABAAEAAAAEAAQAAAABAAEAAAAEAAUAAAABAAEAAAAEAAYAAAABAAEAAAAEAAcAAAABAAEAAAAEAAgAAAABAAEAAAAEAAkAAAABAAIAAAAFAPb/AAABAAEAAAAFAPf/AAABAAEAAAAFAPj/AAABAAEAAAAFAPn/AAABAAEAAAAFAPr/AAABAAEAAAAFAPv/AAACAAAAAAAFAPz/AAACAAIAAAAFAP3/AAABAAEAAAAFAP7/AAACAAMAAAAFAP//AAABAAMAAAAFAAAAAAABAAMAAAAFAAEAAAABAAEAAAAFAAIAAAABAAEAAAAFAAMAAAABAAEAAAAFAAQAAAABAAEAAAAFAAUAAAABAAEAAAAFAAYAAAABAAEAAAAFAAcAAAABAAEAAAAFAAgAAAABAAEAAAAFAAkAAAABAAIAAAAGAPb/AAABAAEAAAAGAPf/AAABAAEAAAAGAPj/AAABAAEAAAAGAPn/AAABAAEAAAAGAPr/AAABAAEAAAAGAPv/AAABAAEAAAAGAPz/AAABAAEAAAAGAP3/AAABAAEAAAAGAP7/AAAAAAMAAAAGAP//AAABAAMAAAAGAAAAAAAAAAMAAAAGAAEAAAABAAEAAAAGAAIAAAABAAEAAAAGAAMAAAABAAEAAAAGAAQAAAABAAEAAAAGAAUAAAABAAEAAAAGAAYAAAABAAEAAAAGAAcAAAABAAEAAAAGAAgAAAABAAEAAAAGAAkAAAABAAIAAAAHAPb/AAABAAEAAAAHAPf/AAABAAEAAAAHAPj/AAABAAEAAAAHAPn/AAABAAEAAAAHAPr/AAABAAEAAAAHAPv/AAABAAEAAAAHAPz/AAABAAEAAAAHAP3/AAABAAEAAAAHAP7/AAAAAAMAAAAHAP//AAABAAMAAAAHAAAAAAAAAAMAAAAHAAEAAAABAAEAAAAHAAIAAAABAAEAAAAHAAMAAAABAAEAAAAHAAQAAAABAAEAAAAHAAUAAAABAAEAAAAHAAYAAAABAAEAAAAHAAcAAAABAAEAAAAHAAgAAAABAAEAAAAHAAkAAAABAAIAAAAIAPb/AAABAAEAAAAIAPf/AAABAAEAAAAIAPj/AAABAAEAAAAIAPn/AAABAAEAAAAIAPr/AAABAAEAAAAIAPv/AAABAAEAAAAIAPz/AAABAAEAAAAIAP3/AAABAAEAAAAIAP7/AAAAAAMAAAAIAP//AAABAAMAAAAIAAAAAAAAAAMAAAAIAAEAAAABAAEAAAAIAAIAAAABAAEAAAAIAAMAAAABAAEAAAAIAAQAAAABAAEAAAAIAAUAAAABAAEAAAAIAAYAAAABAAEAAAAIAAcAAAABAAEAAAAIAAgAAAABAAEAAAAIAAkAAAABAAIAAAAJAPb/AAACAAEAAAAJAPf/AAACAAEAAAAJAPj/AAACAAEAAAAJAPn/AAACAAEAAAAJAPr/AAACAAEAAAAJAPv/AAACAAEAAAAJAPz/AAACAAEAAAAJAP3/AAACAAEAAAAJAP7/AAAAAAMAAAAJAP//AAABAAMAAAAJAAAAAAAAAAMAAAAJAAEAAAACAAEAAAAJAAIAAAACAAEAAAAJAAMAAAACAAEAAAAJAAQAAAACAAEAAAAJAAUAAAACAAEAAAAJAAYAAAACAAEAAAAJAAcAAAACAAEAAAAJAAgAAAACAAEAAAAJAAkAAAACAAIAAAD1//X/AAAAAAAAAAD2//X/AAABAAAAAAD3//X/AAABAAAAAAD4//X/AAABAAAAAAD5//X/AAABAAAAAAD6//X/AAABAAAAAAD7//X/AAABAAAAAAD8//X/AAABAAAAAAD9//X/AAABAAAAAAD+//X/AAAAAAMAAAD///X/AAABAAMAAAAAAPX/AAAAAAMAAAABAPX/AAABAAAAAAACAPX/AAABAAAAAAADAPX/AAABAAAAAAAEAPX/AAABAAAAAAAFAPX/AAABAAAAAAAGAPX/AAABAAAAAAAHAPX/AAABAAAAAAAIAPX/AAABAAAAAAAJAPX/AAACAAAAAAA=")
+tile_set = SubResource("TileSet_hn4xe")
 
-[node name="Dices" type="PanelContainer" parent="GameHUD/MarginContainer" unique_id=200149975]
+[node name="MiniPieces" type="Node2D" parent="GameHUD/HUDMargin/MiniMap/MarginContainer/AspectRatioContainer/TileMapLayer"]
+unique_name_in_owner = true
+z_index = 10
+
+[node name="MarginContainer" type="MarginContainer" parent="GameHUD/HUDMargin" unique_id=1544197015]
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/margin_top = 64
+
+[node name="ButtonL" type="Button" parent="GameHUD/HUDMargin/MarginContainer" unique_id=79832704]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
+text = "left"
+
+[node name="ButtonR" type="Button" parent="GameHUD/HUDMargin/MarginContainer" unique_id=1283801988]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+text = "rigth"
+
+[node name="Dices" type="PanelContainer" parent="GameHUD/HUDMargin" unique_id=200149975]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 18)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 8
 
-[node name="AspectRatioContainer" type="AspectRatioContainer" parent="GameHUD/MarginContainer/Dices" unique_id=1336726651]
+[node name="AspectRatioContainer" type="AspectRatioContainer" parent="GameHUD/HUDMargin/Dices" unique_id=1336726651]
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 
-[node name="Dice" type="AnimatedSprite2D" parent="GameHUD/MarginContainer/Dices/AspectRatioContainer" unique_id=1924480191]
+[node name="MainDices" parent="GameHUD/HUDMargin/Dices/AspectRatioContainer" unique_id=1637022031 instance=ExtResource("4_6chcw")]
+unique_name_in_owner = true
 
-[node name="PlayerButton" type="Button" parent="GameHUD/MarginContainer/Dices" unique_id=539003966]
+[node name="PlayerButton" type="Button" parent="GameHUD/HUDMargin/Dices" unique_id=539003966]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxEmpty_6chcw")
 theme_override_styles/hover = SubResource("StyleBoxEmpty_g3kas")
 theme_override_styles/disabled = SubResource("StyleBoxEmpty_0onpb")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_vs606")
 
-[node name="Players" type="PanelContainer" parent="GameHUD/MarginContainer" unique_id=1394126077]
+[node name="Players" type="PanelContainer" parent="GameHUD/HUDMargin" unique_id=1394126077]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 size_flags_horizontal = 8
+size_flags_vertical = 0
 
-[node name="Control" parent="GameHUD/MarginContainer/Players" unique_id=939403117 instance=ExtResource("3_hukp0")]
+[node name="PlayerCards" type="HBoxContainer" parent="GameHUD/HUDMargin/Players" unique_id=902588279]
+unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 0
+
+[node name="player" parent="GameHUD/HUDMargin/Players/PlayerCards" unique_id=939403117 instance=ExtResource("3_hukp0")]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="player2" parent="GameHUD/HUDMargin/Players/PlayerCards" unique_id=665596029 instance=ExtResource("3_hukp0")]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="player3" parent="GameHUD/HUDMargin/Players/PlayerCards" unique_id=1932177515 instance=ExtResource("3_hukp0")]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="player4" parent="GameHUD/HUDMargin/Players/PlayerCards" unique_id=774491835 instance=ExtResource("3_hukp0")]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="DiceSelector" parent="GameHUD" unique_id=1871614941 instance=ExtResource("7_g3kas")]
+layout_mode = 0
+
+[node name="TurnBanner" parent="GameHUD" instance=ExtResource("8_banner")]
+unique_name_in_owner = true
+layout_mode = 1
+
+[node name="EndTurnButton" parent="GameHUD" instance=ExtResource("9_endturn")]
+unique_name_in_owner = true
+layout_mode = 1
+
+[node name="Toast" parent="GameHUD" instance=ExtResource("10_toast")]
+unique_name_in_owner = true
+layout_mode = 1
+
+[node name="CellTooltip" parent="GameHUD" instance=ExtResource("11_tip")]
+unique_name_in_owner = true
+layout_mode = 0
+
+[node name="ResultScreen" parent="GameHUD" instance=ExtResource("12_result")]
+unique_name_in_owner = true
+layout_mode = 1
+
+[node name="TriviaUI" parent="." unique_id=51980602 instance=ExtResource("4_7rcnj")]
+
+[node name="CardPanel" parent="." instance=ExtResource("13_card")]

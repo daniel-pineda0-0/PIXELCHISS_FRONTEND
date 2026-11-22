@@ -343,9 +343,6 @@ func _update_turn_label() -> void:
 	var who := _short_name(_player_name(active_id))
 	var rolled := bool(turn.get("rolled", false))
 	var choosing_crown := bool(turn.get("crownChoiceRequired", false))
-	# `turn.deadline` cambia de significado según la fase (guía §5.1): con la animación en
-	# espera no hay cuenta regresiva de movimiento, solo "dados".
-	var show_clock := true
 	var text := ""
 	if GameNet.state.get("trivia") != null:
 		text = "Responde la trivia" if mine else "%s responde trivia" % who
@@ -353,7 +350,6 @@ func _update_turn_label() -> void:
 		text = "Elige un objetivo" if mine else "%s elige objetivo" % who
 	elif rolled and GameNet.animation_status() == "WAITING":
 		text = "Tus dados..." if mine else "Dados de %s" % who
-		show_clock = false
 	elif choosing_crown:
 		text = "Tres pares: elige qué coronar" if mine else "%s elige qué coronar" % who
 	elif mine:
@@ -368,7 +364,7 @@ func _update_turn_label() -> void:
 			text = "Mueve una ficha"
 	else:
 		text = "Turno de " + who
-	var seconds := _seconds_left() if show_clock else -1
+	var seconds := _seconds_left()
 	if seconds >= 0:
 		text += "  %ds" % seconds
 	_turn_label.text = text
@@ -376,10 +372,34 @@ func _update_turn_label() -> void:
 	if label_settings != null:
 		label_settings.font_color = URGENT_COLOR if seconds >= 0 and seconds <= LOW_TIME else Color.WHITE
 
-## Segundos que quedan del turno según `turn.deadline` (Unix ms del servidor). Solo
-## se muestra: el servidor decide cuándo vence y pasa el turno por su cuenta.
+## Plazo (Unix ms) del reloj que corresponde a la fase actual (guía §8.1). `turn.deadline` por sí
+## solo no sirve: cambia de significado y durante una trivia NO es un reloj activo. 0 = sin reloj.
+##   trivia pendiente        → trivia.deadline        (15 s propios; el movimiento queda pausado)
+##   carta pendiente         → card.deadline          (15 s)
+##   sin lanzar              → turn.deadline          (60 s)
+##   esperando confirmación  → turn.animationDeadline (10 s)
+##   moviendo                → turn.deadline          (30 s desde confirmar, si movementStartedAt != null)
+## Las liberaciones por par y el tercer par no abren reloj de movimiento: ahí no se muestra nada.
+func _active_deadline() -> float:
+	var state := GameNet.state
+	var turn := _turn()
+	if state.get("trivia") is Dictionary:
+		return float(state.trivia.get("deadline", 0))
+	if state.get("card") is Dictionary:
+		return float(state.card.get("deadline", 0))
+	if not bool(turn.get("rolled", false)):
+		return float(turn.get("deadline", 0))
+	match GameNet.animation_status():
+		"WAITING":
+			return float(turn.get("animationDeadline", 0))
+		"COMPLETED":
+			return float(turn.get("deadline", 0)) if turn.get("movementStartedAt") != null else 0.0
+	return 0.0
+
+## Segundos que quedan del reloj de la fase. Solo se muestra: el servidor decide cuándo vence y
+## pasa el turno por su cuenta (no se cierra nada desde aquí). -1 = sin reloj.
 func _seconds_left() -> int:
-	var deadline := float(_turn().get("deadline", 0))
+	var deadline := _active_deadline()
 	if deadline <= 0.0:
 		return -1
 	return maxi(0, ceili((deadline - Time.get_unix_time_from_system() * 1000.0) / 1000.0))

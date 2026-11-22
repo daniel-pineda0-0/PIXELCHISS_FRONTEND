@@ -1,5 +1,7 @@
 [gd_scene format=3 uid="uid://cp50pbxumky4s"]
 
+[ext_resource type="Script" uid="uid://d0v7ho4u5b3j1" path="res://features/server/server.gd" id="1_bo883"]
+
 [node name="ServerScreen" type="Control" unique_id=1396237336]
 layout_mode = 3
 anchors_preset = 15
@@ -7,6 +9,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_bo883")
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=1005747434]
 layout_mode = 1

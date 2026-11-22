@@ -55,6 +55,16 @@ func load_profile() -> bool:
 	logged_in.emit()
 	return true
 
+## Guarda el nombre de jugador en el servidor (PUT /api/auth/me/display-name).
+## El servidor acepta de 3 a 24 caracteres: letras sin tilde, numeros o guion bajo.
+## Devuelve la respuesta de Api.request; si va bien, actualiza el perfil local.
+func set_display_name(display_name: String) -> Dictionary:
+	var r: Dictionary = await Api.request(HTTPClient.METHOD_PUT,
+			"/api/auth/me/display-name", {"displayName": display_name})
+	if r.ok and r.data is Dictionary:
+		profile = r.data
+	return r
+
 func logout() -> void:
 	if refresh_token != "":
 		await Api.request(HTTPClient.METHOD_POST, "/api/logout",

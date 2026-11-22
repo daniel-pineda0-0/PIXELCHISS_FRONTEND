@@ -1,0 +1,42 @@
+[gd_scene format=3]
+
+[ext_resource type="Texture2D" path="res://service/assets/backgrounds/room/bg_room.png" id="t_bg"]
+[ext_resource type="Texture2D" path="res://service/assets/backgrounds/room/lava_glow.png" id="t_lava"]
+[ext_resource type="Texture2D" path="res://service/assets/backgrounds/menu/moon.png" id="t_moon"]
+[ext_resource type="Texture2D" path="res://service/assets/backgrounds/room/eye_front.png" id="t_front"]
+[ext_resource type="Texture2D" path="res://service/assets/backgrounds/room/eye_side.png" id="t_side"]
+[ext_resource type="Script" path="res://features/lobby/room_background.gd" id="s_bg"]
+
+[sub_resource type="CanvasItemMaterial" id="Add"]
+blend_mode = 1
+
+[node name="RoomBackground" type="CanvasLayer"]
+layer = -1
+script = ExtResource("s_bg")
+eye_front = ExtResource("t_front")
+eye_side = ExtResource("t_side")
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="Base" type="Sprite2D" parent="World"]
+texture = ExtResource("t_bg")
+centered = false
+
+[node name="LavaGlow" type="Sprite2D" parent="World"]
+modulate = Color(1, 1, 1, 0.1)
+material = SubResource("Add")
+texture = ExtResource("t_lava")
+centered = false
+
+[node name="Moon" type="Sprite2D" parent="World"]
+modulate = Color(1, 0.4, 0.36, 1)
+position = Vector2(537, 56)
+texture = ExtResource("t_moon")
+
+[node name="Eye" type="Node2D" parent="World"]
+position = Vector2(-90, 300)
+
+[node name="Sprite" type="Sprite2D" parent="World/Eye"]
+texture = ExtResource("t_side")
+centered = false
+offset = Vector2(-36, -36)

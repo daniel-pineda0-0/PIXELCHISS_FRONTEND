@@ -23,6 +23,7 @@ var _verifier := ""       # PKCE: se queda en memoria, nunca sale en una URL
 var _desktop := true
 var _done := false
 var _handled := false
+var callback_port := 0
 
 ## 43 caracteres Base64URL sin relleno (32 bytes aleatorios), como pide PKCE.
 static func _b64url(bytes: PackedByteArray) -> String:
@@ -71,6 +72,21 @@ func _begin_web(port: int, challenge: String) -> String:
 	_state = Crypto.new().generate_random_bytes(32).hex_encode()   # 64 caracteres [0-9a-f]
 	return "%s/oauth2/authorization/google?client_state=%s&client_port=%d&client_challenge=%s" \
 			% [Config.BASE_URL, _state, port, challenge]
+
+## Abre un puerto local libre para recibir el callback del servidor (acepta 1024-65535).
+## Primero deja que el sistema elija uno; asi se evitan los rangos que Windows reserva
+## (Hyper-V, WSL, Docker). Si eso falla, prueba puertos al azar en todo el rango.
+func _open_port() -> int:
+	if _server.listen(0, "127.0.0.1") == OK:
+		var chosen := _server.get_local_port()
+		if chosen >= 1024:
+			return chosen
+		_server.stop()
+	for _i in 200:
+		var p := randi_range(1024, 65535)
+		if _server.listen(p, "127.0.0.1") == OK:
+			return p
+	return 0
 
 func _process(_d: float) -> void:
 	if _done or _handled:

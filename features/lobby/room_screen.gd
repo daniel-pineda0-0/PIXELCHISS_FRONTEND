@@ -5,16 +5,17 @@ extends Control
 ## decide si son válidas y esta pantalla muestra su mensaje cuando no lo son.
 
 const STATUS_TIME := 4.0
-const READY_COLOR := Color(0.6, 1.0, 0.6)
+const READY_COLOR := Color(0.5, 1.6, 0.5)
 
 @onready var player_cards: Array = [%PlayerCard, %PlayerCard2, %PlayerCard3, %PlayerCard4]
 @onready var map_cards: Array = [%MapCard, %MapCard2]
 
 @onready var room_code_label:Label=%RoomCodeLabel
-@onready var copy_button = %CopyButton          # JoinButton (tiene set_text)
-@onready var exit_button:TextureButton=%ExitButton
-@onready var ready_button:TextureButton=%ReadyButton
-@onready var start_button = %StartButton        # JoinButton (tiene set_text)
+@onready var copy_button: Button = %CopyButton
+@onready var exit_button: Button = %ExitButton
+@onready var ready_button: Button = %ReadyButton
+@onready var start_button: Button = %StartButton
+@onready var background = %RoomBackground
 @onready var leader_label: Label = %LeaderLabel
 @onready var preview_label: Label = %PreviewLabel
 @onready var status_label: Label = %StatusLabel
@@ -22,6 +23,7 @@ const READY_COLOR := Color(0.6, 1.0, 0.6)
 var _map_ids: Array[String] = []   # map_ids[i] es el mapa de map_cards[i]
 var _selected_map := ""            # mapa en vista previa (US-012 esc. 5)
 var _known_names := {}             # user_id -> nombre, para avisar quién entra o sale
+var _known_bots := {}              # user_id -> true si es bot (suena distinto)
 var _was_host := false
 var _status_timer := Timer.new()
 
@@ -46,8 +48,6 @@ func _ready() -> void:
 		card.selected.connect(_on_map_selected)
 		card.vote_pressed.connect(_on_vote_pressed)
 		card.visible = false
-	copy_button.set_text("Copy")
-	start_button.set_text("Start")
 
 	room_code_label.text = Lobby.data.code
 	_was_host = Lobby.is_host()
@@ -60,6 +60,18 @@ func _ready() -> void:
 		_build_maps(Lobby.maps)
 	if GameState.state == GameState.State.GAME and Lobby.in_lobby():
 		status_label.text = "Partida iniciada: %s" % GameState.game_id
+	_place_eye.call_deferred()
+
+## El ojo del fondo se queda en el hueco libre entre los dos mapas, debajo de la columna
+## de votos del primero. Se calcula con el diseno ya acomodado.
+func _place_eye() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var first: Control = map_cards[0]
+	var second: Control = map_cards[1]
+	var left_edge: float = first.global_position.x + first.get_node("HBoxContainer/PanelContainer").size.x
+	var right_edge: float = second.global_position.x
+	background.set_rest_point(Vector2((left_edge + right_edge) / 2.0, first.global_position.y + 128.0))
 
 # --- Pintar la sala ---
 
@@ -74,7 +86,7 @@ func _refresh() -> void:
 			var is_me: bool = players[i].user_id == Lobby.my_id()
 			player_cards[i].show_player(players[i], Lobby.seat_of(i, players.size()), can_manage, is_me)
 		else:
-			player_cards[i].show_empty(can_manage)
+			player_cards[i].show_empty(can_manage, Lobby.seat_of(i, 4))
 	_refresh_maps()
 	_refresh_buttons()
 
@@ -134,20 +146,28 @@ func _preview_text(map_id: String) -> String:
 
 func _remember_players() -> void:
 	_known_names.clear()
+	_known_bots.clear()
 	for player in Lobby.data.players:
 		_known_names[player.user_id] = player.display_name
+		_known_bots[player.user_id] = bool(player.get("is_bot", false))
 
 func _announce_changes() -> void:
 	var current := {}
+	var current_bots := {}
 	for player in Lobby.data.players:
 		current[player.user_id] = player.display_name
+		current_bots[player.user_id] = bool(player.get("is_bot", false))
+	# un jugador y un bot suenan distinto al entrar o salir
 	for id in current:
 		if not _known_names.has(id):
 			_show_status("%s se unio a la sala" % current[id])
+			Sfx.play(&"bot_add" if current_bots[id] else &"player_join")
 	for id in _known_names:
 		if not current.has(id):
 			_show_status("%s salio de la sala" % _known_names[id])
+			Sfx.play(&"bot_remove" if _known_bots.get(id, false) else &"player_leave")
 	_known_names = current
+	_known_bots = current_bots
 	var host :bool= Lobby.is_host()
 	if host and not _was_host:
 		_show_status("Ahora eres el anfitrion")
@@ -160,6 +180,7 @@ func _show_status(text: String) -> void:
 func _report(result: Dictionary) -> void:
 	if not result.ok:
 		_show_status(result.error)
+		Sfx.play(&"error")
 
 # --- Señales de Lobby ---
 
@@ -168,6 +189,8 @@ func _on_lobby_changed(_lobby: Dictionary) -> void:
 	_refresh()
 
 func _on_started(lobby: Dictionary) -> void:
+	if not Lobby.is_host():
+		Sfx.play(&"start")              # el anfitrion ya lo oyo al pulsar Iniciar
 	GameState.start_game(lobby)
 	get_tree().change_scene_to_file(GameState.LOADING_SCENE)
 
@@ -184,7 +207,10 @@ func _on_exit_button_pressed() -> void:
 
 func _on_ready_button_pressed() -> void:
 	var is_ready: bool = Lobby.me().get("ready", false)
-	_report(await Lobby.set_ready(not is_ready))
+	var result: Dictionary = await Lobby.set_ready(not is_ready)
+	if result.ok:
+		Sfx.play(&"ready_off" if is_ready else &"ready_on")
+	_report(result)
 
 func _on_start_button_pressed() -> void:
 	start_button.disabled = true
@@ -192,6 +218,7 @@ func _on_start_button_pressed() -> void:
 	if result.ok:
 		return
 	_show_status(result.error)
+	Sfx.play(&"error")
 	_refresh_buttons()
 
 func _on_copy_button_pressed() -> void:

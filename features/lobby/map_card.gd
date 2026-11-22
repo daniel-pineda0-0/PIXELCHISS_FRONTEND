@@ -10,19 +10,21 @@ const MINIMAPS := {
 	"classic": preload("res://service/assets/ui/icons/ph_map_card_minimap_1.png"),
 	"science": preload("res://service/assets/ui/icons/ph_map_card_minimap_2.png"),
 }
-const VOTED_COLOR := Color(0.6, 1.0, 0.6)
+const VOTED_COLOR := Color(0.5, 1.6, 0.5)   # >1 para que el verde se note sobre el ladrillo rojo
 const DIMMED_COLOR := Color(0.75, 0.75, 0.75)
 
-@onready var panel: PanelContainer = $PanelContainer
+@onready var panel: PanelContainer = $HBoxContainer/PanelContainer
 @onready var count_label: Label = %CountLabel
 @onready var mini_map: TextureRect = %MiniMap
-@onready var vote_button: TextureButton = %VoteButton
+@onready var vote_button: Button = %VoteButton
 
 var map_id := ""
 
 func _ready() -> void:
 	panel.mouse_entered.connect(func(): selected.emit(map_id))
 	panel.gui_input.connect(_on_panel_gui_input)
+	# Tambien se selecciona (vista previa) al pasar el mouse por la flecha de votar.
+	vote_button.mouse_entered.connect(func(): selected.emit(map_id))
 	vote_button.pressed.connect(_on_vote_button_pressed)
 
 func setup(map: Dictionary) -> void:

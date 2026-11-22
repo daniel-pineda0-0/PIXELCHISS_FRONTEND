@@ -1,27 +1,29 @@
 [gd_scene format=3 uid="uid://c0gnq72brpw12"]
 
-[ext_resource type="Texture2D" uid="uid://dn5d44p2mfg11" path="res://service/assets/ui/theme/ph_bt_exit_normal.png" id="1_233tq"]
 [ext_resource type="Script" uid="uid://7oc2uigl2osn" path="res://features/lobby/room_screen.gd" id="1_rjadh"]
-[ext_resource type="Texture2D" uid="uid://eeh0uxnd7r6" path="res://service/assets/ui/theme/ph_bt_exit_pressed.png" id="2_lrhn8"]
-[ext_resource type="Texture2D" uid="uid://biefvw2en2v6b" path="res://service/assets/ui/theme/ph_bt_exit_hover.png" id="3_lrhn8"]
 [ext_resource type="PackedScene" uid="uid://b37l5rb5rqvhb" path="res://features/lobby/player_card.tscn" id="4_5jx17"]
 [ext_resource type="PackedScene" uid="uid://dlt1rrw34130w" path="res://features/lobby/map_card.tscn" id="5_r206s"]
-[ext_resource type="Texture2D" uid="uid://de24lfpvv8lgo" path="res://service/assets/ui/theme/ph_bt_ready_normal.png" id="6_du8pq"]
-[ext_resource type="PackedScene" uid="uid://cxlqyhuuejla7" path="res://features/lobby/join_button.tscn" id="7_77033"]
-[ext_resource type="Texture2D" uid="uid://bo0qx431uolfb" path="res://service/assets/ui/theme/ph_bt_ready_pressed.png" id="7_rjadh"]
-[ext_resource type="Texture2D" uid="uid://b3edpxlp0ri18" path="res://service/assets/ui/theme/ph_bt_ready_hover.png" id="8_x01b4"]
 [ext_resource type="LabelSettings" uid="uid://dft2d8hc78d73" path="res://service/assets/ui/prefabs/PixelFontWhite.tres" id="10_x01b4"]
+[ext_resource type="PackedScene" path="res://features/settings/settings_button.tscn" id="11_settings"]
+[ext_resource type="Theme" path="res://service/assets/ui/theme/pixel_theme.tres" id="12_theme"]
+[ext_resource type="PackedScene" path="res://features/lobby/room_background.tscn" id="13_bg"]
+[ext_resource type="Texture2D" path="res://service/assets/ui/icons/arrow_left.png" id="14_arrow"]
+[ext_resource type="Texture2D" path="res://service/assets/ui/icons/copy.png" id="15_copy"]
 
-[node name="RoomScreen" type="Control" unique_id=1294898189]
+[node name="RoomScreen" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("12_theme")
 script = ExtResource("1_rjadh")
 
-[node name="TextureRect" type="TextureRect" parent="." unique_id=2036031902]
+[node name="RoomBackground" parent="." instance=ExtResource("13_bg")]
+unique_name_in_owner = true
+
+[node name="Main" type="HBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -29,148 +31,160 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Main" type="HBoxContainer" parent="." unique_id=597591302]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="LeftArea" type="MarginContainer" parent="Main" unique_id=438109937]
+[node name="LeftArea" type="MarginContainer" parent="Main"]
 layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Main/LeftArea" unique_id=2072917252]
+[node name="VBoxContainer" type="VBoxContainer" parent="Main/LeftArea"]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
-theme_override_constants/separation = 8
+theme_override_constants/separation = 6
 
-[node name="ExitButton" type="TextureButton" parent="Main/LeftArea/VBoxContainer" unique_id=2032148240]
+[node name="ExitButton" type="Button" parent="Main/LeftArea/VBoxContainer"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 26)
 layout_mode = 2
 size_flags_horizontal = 0
-texture_normal = ExtResource("1_233tq")
-texture_pressed = ExtResource("2_lrhn8")
-texture_hover = ExtResource("3_lrhn8")
+tooltip_text = "Salir de la sala"
+focus_mode = 0
+icon = ExtResource("14_arrow")
+icon_alignment = 1
 
-[node name="PlayersContainer" type="PanelContainer" parent="Main/LeftArea/VBoxContainer" unique_id=1586576943]
+[node name="PlayersContainer" type="PanelContainer" parent="Main/LeftArea/VBoxContainer"]
 layout_mode = 2
+theme_type_variation = &"PanelThin"
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Main/LeftArea/VBoxContainer/PlayersContainer" unique_id=703904978]
+[node name="VBoxContainer" type="VBoxContainer" parent="Main/LeftArea/VBoxContainer/PlayersContainer"]
 layout_mode = 2
+theme_override_constants/separation = 2
 
-[node name="PlayerCard" parent="Main/LeftArea/VBoxContainer/PlayersContainer/VBoxContainer" unique_id=2081797781 instance=ExtResource("4_5jx17")]
+[node name="PlayerCard" parent="Main/LeftArea/VBoxContainer/PlayersContainer/VBoxContainer" instance=ExtResource("4_5jx17")]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="PlayerCard2" parent="Main/LeftArea/VBoxContainer/PlayersContainer/VBoxContainer" unique_id=1373962773 instance=ExtResource("4_5jx17")]
+[node name="PlayerCard2" parent="Main/LeftArea/VBoxContainer/PlayersContainer/VBoxContainer" instance=ExtResource("4_5jx17")]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="PlayerCard3" parent="Main/LeftArea/VBoxContainer/PlayersContainer/VBoxContainer" unique_id=2011886842 instance=ExtResource("4_5jx17")]
+[node name="PlayerCard3" parent="Main/LeftArea/VBoxContainer/PlayersContainer/VBoxContainer" instance=ExtResource("4_5jx17")]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="PlayerCard4" parent="Main/LeftArea/VBoxContainer/PlayersContainer/VBoxContainer" unique_id=206550929 instance=ExtResource("4_5jx17")]
+[node name="PlayerCard4" parent="Main/LeftArea/VBoxContainer/PlayersContainer/VBoxContainer" instance=ExtResource("4_5jx17")]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="CenterArea" type="MarginContainer" parent="Main" unique_id=1885620457]
+[node name="CenterArea" type="MarginContainer" parent="Main"]
 layout_mode = 2
-theme_override_constants/margin_left = 32
-theme_override_constants/margin_top = 16
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 8
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Main/CenterArea" unique_id=1466770546]
+[node name="VBoxContainer" type="VBoxContainer" parent="Main/CenterArea"]
 layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CodeContainer" type="HBoxContainer" parent="Main/CenterArea/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
 theme_override_constants/separation = 8
 
-[node name="CodeContainer" type="HBoxContainer" parent="Main/CenterArea/VBoxContainer" unique_id=1886632895]
+[node name="PanelContainer" type="PanelContainer" parent="Main/CenterArea/VBoxContainer/CodeContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
+theme_type_variation = &"PanelThin"
 
-[node name="PanelContainer" type="PanelContainer" parent="Main/CenterArea/VBoxContainer/CodeContainer" unique_id=1377705813]
+[node name="VBoxContainer" type="VBoxContainer" parent="Main/CenterArea/VBoxContainer/CodeContainer/PanelContainer"]
 layout_mode = 2
-size_flags_horizontal = 4
-
-[node name="VBoxContainer" type="VBoxContainer" parent="Main/CenterArea/VBoxContainer/CodeContainer/PanelContainer" unique_id=920834238]
-layout_mode = 2
+theme_override_constants/separation = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="Main/CenterArea/VBoxContainer/CodeContainer/PanelContainer/VBoxContainer" unique_id=1397029751]
+[node name="Label" type="Label" parent="Main/CenterArea/VBoxContainer/CodeContainer/PanelContainer/VBoxContainer"]
 layout_mode = 2
-text = "Room code:"
+text = "Codigo de sala:"
 label_settings = ExtResource("10_x01b4")
+horizontal_alignment = 1
 
-[node name="RoomCodeLabel" type="Label" parent="Main/CenterArea/VBoxContainer/CodeContainer/PanelContainer/VBoxContainer" unique_id=1708827436]
+[node name="RoomCodeLabel" type="Label" parent="Main/CenterArea/VBoxContainer/CodeContainer/PanelContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Codigo"
 label_settings = ExtResource("10_x01b4")
 horizontal_alignment = 1
 
-[node name="CopyButton" parent="Main/CenterArea/VBoxContainer/CodeContainer" unique_id=911363883 instance=ExtResource("7_77033")]
+[node name="CopyButton" type="Button" parent="Main/CenterArea/VBoxContainer/CodeContainer"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
 size_flags_vertical = 4
+tooltip_text = "Copiar codigo"
+focus_mode = 0
+theme_override_colors/icon_normal_color = Color(0.85, 0.85, 0.85, 1)
+theme_override_colors/icon_pressed_color = Color(0.65, 0.65, 0.65, 1)
+theme_override_colors/icon_hover_color = Color(1, 1, 1, 1)
+icon = ExtResource("15_copy")
+flat = true
+icon_alignment = 1
 
-[node name="MiniMaps" type="PanelContainer" parent="Main/CenterArea/VBoxContainer" unique_id=1741212352]
+[node name="MiniMaps" type="HBoxContainer" parent="Main/CenterArea/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+theme_override_constants/separation = 36
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Main/CenterArea/VBoxContainer/MiniMaps" unique_id=1463144910]
-layout_mode = 2
-theme_override_constants/separation = 32
-
-[node name="MapCard" parent="Main/CenterArea/VBoxContainer/MiniMaps/HBoxContainer" unique_id=1226306134 instance=ExtResource("5_r206s")]
+[node name="MapCard" parent="Main/CenterArea/VBoxContainer/MiniMaps" instance=ExtResource("5_r206s")]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="MapCard2" parent="Main/CenterArea/VBoxContainer/MiniMaps/HBoxContainer" unique_id=1524354537 instance=ExtResource("5_r206s")]
+[node name="MapCard2" parent="Main/CenterArea/VBoxContainer/MiniMaps" instance=ExtResource("5_r206s")]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="MapInfo" type="VBoxContainer" parent="Main/CenterArea/VBoxContainer" unique_id=1782340031]
+[node name="MapInfo" type="PanelContainer" parent="Main/CenterArea/VBoxContainer"]
+layout_mode = 2
+theme_type_variation = &"PanelThin"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Main/CenterArea/VBoxContainer/MapInfo"]
 layout_mode = 2
 theme_override_constants/separation = 2
 
-[node name="LeaderLabel" type="Label" parent="Main/CenterArea/VBoxContainer/MapInfo" unique_id=1782340032]
+[node name="LeaderLabel" type="Label" parent="Main/CenterArea/VBoxContainer/MapInfo/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Mapa: al azar"
 label_settings = ExtResource("10_x01b4")
 horizontal_alignment = 1
 
-[node name="PreviewLabel" type="Label" parent="Main/CenterArea/VBoxContainer/MapInfo" unique_id=1782340033]
+[node name="PreviewLabel" type="Label" parent="Main/CenterArea/VBoxContainer/MapInfo/VBoxContainer"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(464, 0)
+custom_minimum_size = Vector2(500, 0)
 layout_mode = 2
 label_settings = ExtResource("10_x01b4")
 autowrap_mode = 3
 
-[node name="ReadyButtonContainer" type="MarginContainer" parent="Main/CenterArea/VBoxContainer" unique_id=897609494]
+[node name="ReadyButtonContainer" type="MarginContainer" parent="Main/CenterArea/VBoxContainer"]
 layout_mode = 2
-theme_override_constants/margin_top = 8
 
-[node name="ReadyButton" type="TextureButton" parent="Main/CenterArea/VBoxContainer/ReadyButtonContainer" unique_id=1191759384]
+[node name="ReadyButton" type="Button" parent="Main/CenterArea/VBoxContainer/ReadyButtonContainer"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(112, 26)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
-texture_normal = ExtResource("6_du8pq")
-texture_pressed = ExtResource("7_rjadh")
-texture_hover = ExtResource("8_x01b4")
+focus_mode = 0
+text = "Listo"
 
-[node name="StartButton" parent="Main/CenterArea/VBoxContainer/ReadyButtonContainer" unique_id=1782340034 instance=ExtResource("7_77033")]
+[node name="StartButton" type="Button" parent="Main/CenterArea/VBoxContainer/ReadyButtonContainer"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(112, 26)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
+focus_mode = 0
+text = "Iniciar"
 
-[node name="StatusLabel" type="Label" parent="." unique_id=1782340035]
+[node name="StatusLabel" type="Label" parent="."]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 12
@@ -184,6 +198,8 @@ grow_vertical = 0
 label_settings = ExtResource("10_x01b4")
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="SettingsButton" parent="." instance=ExtResource("11_settings")]
 
 [connection signal="pressed" from="Main/LeftArea/VBoxContainer/ExitButton" to="." method="_on_exit_button_pressed"]
 [connection signal="pressed" from="Main/CenterArea/VBoxContainer/CodeContainer/CopyButton" to="." method="_on_copy_button_pressed"]

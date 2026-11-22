@@ -1,8 +1,9 @@
 extends Node
 
 func request(method: int, path: String, body: Variant = null,
-		auth := true, retry := true) -> Dictionary:
+		auth := true, retry := true, timeout := 10.0) -> Dictionary:
 	var http := HTTPRequest.new()
+	http.timeout = timeout          # sin esto, un Gateway colgado dejaria la peticion esperando para siempre
 	add_child(http)
 	var headers := ["Content-Type: application/json"]
 	if auth and Session.access_token != "":
@@ -17,7 +18,7 @@ func request(method: int, path: String, body: Variant = null,
 	var text: String = res[3].get_string_from_utf8()
 	var data = JSON.parse_string(text) if text != "" else null
 	if status == 401 and auth and retry and await Session.refresh():
-		return await request(method, path, body, auth, false)
+		return await request(method, path, body, auth, false, timeout)
 	return {"ok": status >= 200 and status < 300, "status": status, "data": data}
 
 ## ¿Responde el Gateway en `base_url`? GET /actuator/health, sin JWT (guía §1.1).

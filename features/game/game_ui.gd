@@ -48,6 +48,13 @@ const ERROR_TEXT := {
 	"CHALLENGE_EXPIRED": "Se acabó el tiempo",
 	"INVALID_ANSWER": "Respuesta no válida",
 	"INVALID_CARD_TARGET": "Ese objetivo no es válido",
+	"PIECE_CAPTURE_LOCKED": "Esa ficha ya capturó en esta tirada",
+	"PIECE_RELEASED_THIS_ROLL": "La ficha que acaba de salir no puede moverse en esta tirada",
+	"STALE_ORIGIN": "El tablero cambió, intenta de nuevo",
+	"INVALID_DESTINATION": "Ese movimiento ya no es válido",
+	"NOT_YOUR_PIECE": "Esa ficha no es tuya",
+	"DOUBLES_REQUIRED": "Necesitas sacar pares",
+	"UNAUTHORIZED_DICE": "No puedes elegir los dados",
 }
 
 # Nodos de game_ui.tscn: se piden por nombre único (%), no por ruta. Si reorganizas el HUD,

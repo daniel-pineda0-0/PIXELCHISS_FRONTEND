@@ -32,11 +32,7 @@ static func _b64url(bytes: PackedByteArray) -> String:
 func start(timeout_sec := 300.0) -> void:
 	_verifier = _b64url(Crypto.new().generate_random_bytes(32))
 	var challenge := _b64url(_verifier.sha256_buffer())     # S256 del verificador (ASCII)
-	var port := 0
-	for p in range(49152, 49200):
-		if _server.listen(p, "127.0.0.1") == OK:             # solo loopback, nunca 0.0.0.0
-			port = p
-			break
+	var port := _open_port()                                  # solo loopback, nunca 0.0.0.0
 	if port == 0:
 		_finish(false, "No hay puertos libres")
 		return
@@ -70,8 +66,13 @@ func _begin_desktop(port: int, challenge: String) -> String:
 func _begin_web(port: int, challenge: String) -> String:
 	_desktop = false
 	_state = Crypto.new().generate_random_bytes(32).hex_encode()   # 64 caracteres [0-9a-f]
+	# El navegador debe empezar en el MISMO host al que Google lo devuelve: el servidor guarda el
+	# intento en una cookie de sesion y OAUTH_REDIRECT_URI apunta a "localhost:8081". Si se empieza
+	# en 127.0.0.1, la cookie no viaja a localhost y el callback falla ("Invalid credentials").
+	# Solo cambia la URL que abre el navegador; las peticiones del juego siguen en 127.0.0.1.
+	var browser_base := Config.BASE_URL.replace("//127.0.0.1:", "//localhost:")
 	return "%s/oauth2/authorization/google?client_state=%s&client_port=%d&client_challenge=%s" \
-			% [Config.BASE_URL, _state, port, challenge]
+			% [browser_base, _state, port, challenge]
 
 ## Abre un puerto local libre para recibir el callback del servidor (acepta 1024-65535).
 ## Primero deja que el sistema elija uno; asi se evitan los rangos que Windows reserva

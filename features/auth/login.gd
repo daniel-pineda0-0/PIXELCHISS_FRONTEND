@@ -18,6 +18,8 @@ func _on_login_finished(ok: bool, error: String) -> void:
 	_login.queue_free()
 	if ok:
 		get_tree().change_scene_to_file(GameState.LOADING_SCENE)
+	elif error == GoogleLogin.ERR_NO_SERVER:
+		get_tree().change_scene_to_file(GameState.SERVER_SCENE)    # el servidor dejó de responder
 	else:
 		status.text = "No se pudo iniciar sesión: " + error
 		btn.disabled = false

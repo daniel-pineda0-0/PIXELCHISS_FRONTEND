@@ -12,6 +12,9 @@ class_name GoogleLogin extends Node
 ## cero: nunca se reintenta. Los tokens no se escriben en logs ni en URLs.
 signal finished(ok: bool, error: String)
 
+## Error de conectividad: login.gd lo distingue para abrir la pantalla de servidor.
+const ERR_NO_SERVER := "No se pudo contactar al servidor"
+
 var GOOGLE_HTML_TEMPLATE := FileAccess.open("res://service/assets/google_reply_template.html.xml", FileAccess.READ).get_as_text()
 var _server := TCPServer.new()
 var _peer: StreamPeerTCP
@@ -58,7 +61,7 @@ func _begin_desktop(port: int, challenge: String) -> String:
 	if r.status == 503:
 		return ""                                             # Desktop no configurado en el backend
 	if r.status == 0:
-		_finish(false, "No se pudo contactar al servidor")
+		_finish(false, ERR_NO_SERVER)
 	else:
 		_finish(false, "El servidor rechazó el inicio de sesión (%d)" % r.status)
 	return ""

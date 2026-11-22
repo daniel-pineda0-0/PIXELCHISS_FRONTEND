@@ -4,6 +4,7 @@ enum State { BOOT, MENU, LOBBY, GAME }
 
 const LOGIN_SCENE := "res://features/auth/loggin_screen.tscn"
 const LOADING_SCENE := "res://features/loading/loading_screen.tscn"
+const SERVER_SCENE := "res://features/server/server_screen.tscn"
 
 const SCENES := {
 	State.MENU: "res://features/lobby/menu_screen.tscn",
@@ -29,6 +30,10 @@ func set_state(new_state: State) -> void:
 
 func resolve_next_scene() -> String:
 	if state == State.BOOT:
+		# Sin servidor no hay sesión que restaurar: se pide la IP en vez de caer a un login que
+		# fallaría (la pantalla de servidor vuelve aquí cuando la conexión ya responde).
+		if not await Api.wait_for_server(Config.BASE_URL):
+			return SERVER_SCENE
 		#Session.logout()
 		var logged: bool = Session.is_logged_in() or await Session.try_restore()
 		if not logged:

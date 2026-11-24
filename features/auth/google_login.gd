@@ -15,7 +15,11 @@ signal finished(ok: bool, error: String)
 ## Error de conectividad: login.gd lo distingue para abrir la pantalla de servidor.
 const ERR_NO_SERVER := "No se pudo contactar al servidor"
 
-var GOOGLE_HTML_TEMPLATE := FileAccess.open("res://service/assets/google_reply_template.html.xml", FileAccess.READ).get_as_text()
+const REPLY_TEMPLATE_PATH := "res://service/assets/google_reply_template.html.xml"
+## Plantilla mínima por si el .xml no está empaquetado (en un export, los archivos que no son recursos
+## solo entran con include_filter). Nunca debe tumbar el login por una página de cortesía.
+const FALLBACK_TEMPLATE := "<!DOCTYPE html><html lang=\"es\"><head><meta charset=\"UTF-8\"><title>PixelChiss · {TITLE}</title></head><body style=\"font-family:monospace;background:#17090e;color:#f2eee9;text-align:center;padding:48px\"><h1>{TITLE}</h1><p>{BODY}</p><p>{STATUS_LABEL}</p></body></html>"
+
 var _server := TCPServer.new()
 var _peer: StreamPeerTCP
 var _state := ""          # el que debe volver en el callback (en Desktop lo fija el servidor)
@@ -56,6 +60,9 @@ func _begin_desktop(port: int, challenge: String) -> String:
 		_state = str(r.data.get("state", ""))
 		return str(r.data.get("authorizationUrl"))
 	if r.status == 503:
+		if Config.is_lan():
+			# El login Web no funciona en LAN (el conector HTTPS rechaza /oauth2/**): no hay a dónde caer.
+			_finish(false, "El anfitrión no tiene configurado el login Desktop, necesario en LAN")
 		return ""                                             # Desktop no configurado en el backend
 	if r.status == 0:
 		_finish(false, ERR_NO_SERVER)
@@ -161,6 +168,13 @@ func _handle(raw: String) -> void:
 	var ok: bool = await Session.load_profile()
 	_finish(ok, "" if ok else "No se pudo cargar el perfil")
 
+static func _load_template() -> String:
+	var f := FileAccess.open(REPLY_TEMPLATE_PATH, FileAccess.READ)
+	if f == null:
+		push_warning("GoogleLogin: no se encontró %s; se usa la plantilla mínima" % REPLY_TEMPLATE_PATH)
+		return FALLBACK_TEMPLATE
+	return f.get_as_text()
+
 func _reply_google(title: String, body_message: String, code: int = 200) -> void:
 	var is_ok := (code >= 200 and code < 300)
 
@@ -169,7 +183,8 @@ func _reply_google(title: String, body_message: String, code: int = 200) -> void
 	var badge_color := "#041e49" if is_ok else "#601410"
 	var status_label := "Completado" if is_ok else "Error %d" % code
 
-	var html := GOOGLE_HTML_TEMPLATE \
+	var html := _load_template() \
+			.replace("{ACCENT}", "#2e7d4f" if is_ok else "#b3261e") \
 			.replace("{TITLE}", title) \
 			.replace("{BODY}", body_message) \
 			.replace("{BADGE_BG}", badge_bg) \

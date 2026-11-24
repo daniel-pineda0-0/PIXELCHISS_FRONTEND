@@ -65,6 +65,7 @@ horizontal_alignment = 1
 autowrap_mode = 3
 
 [node name="Buttons" type="HBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1219970346]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
@@ -87,3 +88,70 @@ visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 8
 text = "Cancelar"
+
+[node name="ForgetButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/Buttons" unique_id=1500000001]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Olvidar CA"
+
+[node name="VerifyBox" type="VBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1500000002]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="VerifyTitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/VerifyBox" unique_id=1500000003]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Verificar huella de la CA"
+horizontal_alignment = 1
+
+[node name="VerifyHostLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/VerifyBox" unique_id=1500000004]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="FingerprintLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/VerifyBox" unique_id=1500000005]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="OldFingerprintLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/VerifyBox" unique_id=1500000006]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.55, 0.45, 1)
+theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="VerifyPromptLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/VerifyBox" unique_id=1500000007]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="VerifyButtons" type="HBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/VerifyBox" unique_id=1500000008]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="ConfirmButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/VerifyBox/VerifyButtons" unique_id=1500000009]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Coinciden: confirmar"
+
+[node name="RejectButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/VerifyBox/VerifyButtons" unique_id=1500000010]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "No coinciden: rechazar"

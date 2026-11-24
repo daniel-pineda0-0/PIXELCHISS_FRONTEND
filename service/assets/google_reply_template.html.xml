@@ -4,127 +4,532 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PixelChiss · {TITLE}</title>
+
 <style>
-	:root {
-		--bg: #15131c;
-		--bg-tile: #1b1925;
-		--panel: #221f2e;
-		--panel-edge: #0d0c12;
-		--text: #f1eee6;
-		--muted: #9c97ad;
-		--accent: {ACCENT};
-		--on-accent: #15131c;
-	}
-	* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+	--bg: #17090e;
+	--ink: #f2eee9;
+	--muted: #b9b0b4;
+	--accent: {ACCENT};
+	--on-accent: #fff0e8;
+	--mortar: #0b0e14;
+}
 
-	body {
-		min-height: 100vh;
-		display: grid;
-		place-items: center;
-		padding: 24px;
-		color: var(--text);
-		font-family: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, "Courier New", monospace;
-		background-color: var(--bg);
-		/* tablero de ajedrez tenue de fondo */
-		background-image:
-			conic-gradient(var(--bg-tile) 25%, transparent 0 50%, var(--bg-tile) 0 75%, transparent 0);
-		background-size: 64px 64px;
-	}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-	.card {
-		width: 100%;
-		max-width: 460px;
-		background: var(--panel);
-		padding: 32px 28px 28px;
-		/* borde "pixelado" con esquinas escalonadas */
-		box-shadow:
-			0 -4px 0 0 var(--panel-edge), 0 4px 0 0 var(--panel-edge),
-			-4px 0 0 0 var(--panel-edge), 4px 0 0 0 var(--panel-edge),
-			0 12px 0 0 rgba(0,0,0,.35);
-		text-align: center;
-	}
+html, body { min-height: 100%; }
 
-	.brand {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 12px;
-		margin-bottom: 24px;
-		font-size: 14px;
-		letter-spacing: 4px;
-		font-weight: 700;
-		color: var(--muted);
-	}
-	#pawn rect { fill: var(--accent); }
-	#pawn { width: 28px; height: 33px; image-rendering: pixelated; }
+body {
+	min-height: 100vh;
+	min-height: 100svh;
+	display: grid;
+	place-items: center;
+	padding: 56px 20px 28px;
+	overflow-y: auto;
+	color: var(--ink);
+	font-family: "Courier New", Courier, monospace;
+	background: var(--bg);
+}
 
-	.status {
-		display: inline-block;
-		padding: 5px 12px;
-		margin-bottom: 18px;
-		background: var(--accent);
-		color: var(--on-accent);
-		font-size: 12px;
-		font-weight: 700;
-		letter-spacing: 2px;
-		text-transform: uppercase;
-	}
+/* =====================================
+   BARRA SUPERIOR (diferencia la página del juego)
+===================================== */
 
-	h1 { font-size: 22px; line-height: 1.3; margin-bottom: 12px; }
-	p  { font-size: 14px; line-height: 1.6; color: var(--muted); }
+.topbar {
+	position: fixed;
+	top: 0; left: 0; right: 0;
+	z-index: 5;
+	height: 30px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	padding: 0 12px;
+	background: #09060a;
+	border-bottom: 4px solid var(--accent);
+	color: #d9ced0;
+	font-size: 11px;
+	font-weight: bold;
+	letter-spacing: 1.5px;
+	text-transform: uppercase;
+	white-space: nowrap;
+	overflow: hidden;
+}
 
-	.hint {
-		margin-top: 24px;
-		padding-top: 18px;
-		border-top: 2px dashed #36324a;
-		font-size: 12px;
-		color: var(--muted);
-	}
-	.hint b { color: var(--accent); }
+.topbar i {
+	display: inline-block;
+	width: 8px; height: 8px;
+	background: var(--accent);
+	flex-shrink: 0;
+}
 
-	@media (prefers-reduced-motion: no-preference) {
-		#pawn { animation: hop 1.2s steps(2, end) infinite; }
-		@keyframes hop { 50% { transform: translateY(-3px); } }
-	}
+/* =====================================
+   ESCENA (canvas pixel-art)
+===================================== */
+
+.scene {
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	overflow: hidden;
+	pointer-events: none;
+}
+
+#scene {
+	width: 100%;
+	height: 100%;
+	display: block;
+	object-fit: cover;
+	object-position: 72% 50%;
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+	image-rendering: pixelated;
+	filter: saturate(.8) brightness(.78);
+}
+
+/* Líneas de escaneo + tinte del color de estado */
+.scene::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background:
+		repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px),
+		radial-gradient(ellipse at center, transparent 35%, rgba(5,2,6,.65) 100%),
+		color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* =====================================
+   TARJETA DE PIEDRA
+===================================== */
+
+.card {
+	position: relative;
+	isolation: isolate;
+	z-index: 2;
+	width: min(100%, 470px);
+	padding: 34px 32px 28px;
+	text-align: center;
+	filter: drop-shadow(0 10px 0 rgba(0, 0, 0, .55));
+}
+
+#tex {
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	width: 100%;
+	height: 100%;
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+	image-rendering: pixelated;
+}
+
+/* Franja de estado en la parte superior de la tarjeta */
+.card::before {
+	content: "";
+	position: absolute;
+	left: 14px; right: 14px; top: 14px;
+	height: 6px;
+	background: var(--accent);
+	box-shadow: 0 4px 0 rgba(0,0,0,.5);
+}
+
+.brand {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	margin: 6px 0 22px;
+	color: #cfc7ca;
+	font-size: 13px;
+	font-weight: 900;
+	letter-spacing: 3px;
+	text-shadow: 2px 2px #07080d;
+}
+
+#pawn {
+	width: 18px;
+	height: 22px;
+	flex-shrink: 0;
+	image-rendering: pixelated;
+}
+
+#pawn rect {
+	fill: var(--accent);
+	stroke: #100c12;
+	stroke-width: .3;
+}
+
+/* Placa de estado (no parece botón: esquinas cortadas + sello) */
+.status {
+	display: inline-block;
+	padding: 8px 18px;
+	margin-bottom: 20px;
+	color: var(--on-accent);
+	background: var(--accent);
+	font-size: 12px;
+	font-weight: bold;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	text-shadow: 2px 2px rgba(0,0,0,.45);
+	clip-path: polygon(
+		0 6px, 6px 6px, 6px 0,
+		calc(100% - 6px) 0, calc(100% - 6px) 6px, 100% 6px,
+		100% calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) 100%,
+		6px 100%, 6px calc(100% - 6px), 0 calc(100% - 6px)
+	);
+	box-shadow: inset 0 -4px 0 rgba(0,0,0,.28), inset 0 4px 0 rgba(255,255,255,.18);
+}
+
+h1 {
+	margin-bottom: 14px;
+	color: #f7f2ee;
+	font-size: clamp(20px, 5.4vw, 28px);
+	line-height: 1.3;
+	letter-spacing: 1px;
+	text-shadow: 3px 3px #07080d;
+}
+
+p {
+	color: #d1c8c7;
+	font-size: 14px;
+	line-height: 1.65;
+	text-shadow: 2px 2px #0b0b10;
+}
+
+/* Mensaje inferior: recuadro hundido */
+.hint {
+	margin-top: 24px;
+	padding: 13px 14px;
+	background: rgba(5, 7, 12, .72);
+	border: 3px dashed #4a4752;
+	color: #b4adb0;
+	font-size: 12px;
+	line-height: 1.7;
+}
+
+.hint b { color: var(--accent); filter: brightness(1.35); }
+
+/* Animaciones */
+@media (prefers-reduced-motion: no-preference) {
+	#pawn { animation: hop 1.2s steps(2, end) infinite; }
+	@keyframes hop { 50% { transform: translateY(-3px); } }
+
+	.topbar i { animation: blink 1.6s steps(2, end) infinite; }
+	@keyframes blink { 50% { opacity: .2; } }
+}
+
+@media (max-width: 480px) {
+	.card { padding: 30px 20px 22px; }
+	.topbar { font-size: 10px; letter-spacing: 1px; }
+}
+
+@media (max-height: 520px) {
+	body { padding-top: 44px; }
+	.card { padding: 24px 24px 18px; }
+	.brand { margin-bottom: 12px; }
+	.status { margin-bottom: 12px; }
+	.hint { margin-top: 14px; padding: 9px 12px; }
+}
 </style>
 </head>
+
 <body>
-	<main class="card">
-		<div class="brand">
-			<svg id="pawn" viewBox="0 0 9 11" shape-rendering="crispEdges" aria-hidden="true"></svg>
-			PIXELCHISS
-		</div>
 
-		<div class="status">{STATUS_LABEL}</div>
-		<h1>{TITLE}</h1>
-		<p>{BODY}</p>
+<div class="topbar" role="note">
+	<i></i> PixelChiss · Portal web · Esta ventana no es el juego <i></i>
+</div>
 
-		<div class="hint">Ya puedes <b>cerrar esta pestaña</b> y volver al juego.</div>
-	</main>
+<!-- Escena dibujada con canvas (sin imágenes externas) -->
+<div class="scene" aria-hidden="true">
+	<canvas id="scene" width="256" height="144"></canvas>
+</div>
 
-	<script>
-		// peón en pixel art generado desde una cuadrícula
-		const grid = [
-			"...XXX...",
-			"..XXXXX..",
-			"..XXXXX..",
-			"...XXX...",
-			"..XXXXX..",
-			"...XXX...",
-			"...XXX...",
-			"..XXXXX..",
-			".XXXXXXX.",
-			".XXXXXXX.",
-			"XXXXXXXXX"
-		];
-		const svg = document.getElementById("pawn");
-		grid.forEach((row, y) => [...row].forEach((c, x) => {
-			if (c !== "X") return;
-			const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-			r.setAttribute("x", x); r.setAttribute("y", y);
-			r.setAttribute("width", 1); r.setAttribute("height", 1);
-			svg.appendChild(r);
-		}));
-	</script>
+<main class="card">
+	<canvas id="tex" aria-hidden="true"></canvas>
+
+	<div class="brand">
+		<svg id="pawn" viewBox="0 0 9 11" shape-rendering="crispEdges" aria-hidden="true"></svg>
+		PIXEL CHISS
+	</div>
+
+	<div class="status">{STATUS_LABEL}</div>
+
+	<h1>{TITLE}</h1>
+
+	<p>{BODY}</p>
+
+	<div class="hint">
+		Ya puedes <b>cerrar esta pestaña</b> y volver al juego.
+	</div>
+</main>
+
+<script>
+/* ---------- utilidades ---------- */
+function mulberry32(a) {
+	return function () {
+		a |= 0; a = a + 0x6D2B79F5 | 0;
+		let t = Math.imul(a ^ a >>> 15, 1 | a);
+		t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+		return ((t ^ t >>> 14) >>> 0) / 4294967296;
+	};
+}
+
+const BAYER = [[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]].map(r => r.map(v => (v + .5) / 16));
+
+/* ---------- peón ---------- */
+(function () {
+	const grid = [
+		"...XXX...", "..XXXXX..", "..XXXXX..", "...XXX...",
+		"..XXXXX..", "...XXX...", "...XXX...", "..XXXXX..",
+		".XXXXXXX.", ".XXXXXXX.", "XXXXXXXXX"
+	];
+	const svg = document.getElementById("pawn");
+	grid.forEach((row, y) => [...row].forEach((c, x) => {
+		if (c !== "X") return;
+		const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+		r.setAttribute("x", x); r.setAttribute("y", y);
+		r.setAttribute("width", 1); r.setAttribute("height", 1);
+		svg.appendChild(r);
+	}));
+})();
+
+/* ---------- escena: cielo, luna, castillo, lava ---------- */
+(function () {
+	const cv = document.getElementById("scene");
+	const W = cv.width, H = cv.height;
+	const g = cv.getContext("2d");
+	const rnd = mulberry32(7);
+
+	const px = (x, y, c) => {
+		x = Math.floor(x); y = Math.floor(y);
+		if (x < 0 || y < 0 || x >= W || y >= H) return;
+		g.fillStyle = c; g.fillRect(x, y, 1, 1);
+	};
+
+	function ellipse(cx, cy, rx, ry, c) {
+		for (let y = Math.floor(cy - ry); y <= cy + ry; y++)
+			for (let x = Math.floor(cx - rx); x <= cx + rx; x++)
+				if (((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 < 1) px(x, y, c);
+	}
+
+	/* cielo con bandas tramadas */
+	const bands = ["#1b060d", "#2b0a12", "#430d17", "#5e121c", "#7a1a22", "#92252a"];
+	const skyEnd = 104;
+	for (let y = 0; y < skyEnd; y++) {
+		const t = y / skyEnd * (bands.length - 1);
+		const i = Math.floor(t), f = t - i;
+		for (let x = 0; x < W; x++) {
+			const c = f > BAYER[y & 3][x & 3] ? bands[Math.min(i + 1, bands.length - 1)] : bands[i];
+			px(x, y, c);
+		}
+	}
+	g.fillStyle = bands[5]; g.fillRect(0, skyEnd, W, H - skyEnd);
+
+	/* nubes */
+	function cloud(cx, cy, rx, ry, body, rim) {
+		for (let y = Math.floor(cy - ry); y <= cy + ry; y++)
+			for (let x = Math.floor(cx - rx); x <= cx + rx; x++) {
+				const d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2;
+				if (d >= 1) continue;
+				const up = ((x - cx) / rx) ** 2 + ((y + 1.5 - cy) / ry) ** 2;
+				px(x, y, up >= 1 && y < cy ? rim : body);
+			}
+	}
+	for (let k = 0; k < 9; k++) cloud(rnd() * W, 6 + rnd() * 44, 18 + rnd() * 28, 2 + rnd() * 4, "#2c0a13", "#8a2a2f");
+	for (let k = 0; k < 5; k++) cloud(rnd() * 120, 4 + rnd() * 26, 30 + rnd() * 30, 4 + rnd() * 5, "#1a060c", "#5e1a22");
+
+	/* luna */
+	const mx = 196, my = 27, mr = 16;
+	for (let y = my - mr - 11; y <= my + mr + 11; y++)
+		for (let x = mx - mr - 11; x <= mx + mr + 11; x++) {
+			const d = Math.hypot(x - mx, y - my);
+			if (d > mr + 2 && d < mr + 10 && (1 - (d - mr - 2) / 8) > BAYER[y & 3][x & 3] + .1) px(x, y, "#a82e2e");
+		}
+	ellipse(mx, my, mr + 2, mr + 2, "#120609");
+	for (let y = my - mr; y <= my + mr; y++)
+		for (let x = mx - mr; x <= mx + mr; x++) {
+			const d = Math.hypot(x - mx, y - my);
+			if (d >= mr) continue;
+			const s = Math.hypot((x - mx + 5) / mr, (y - my + 5) / mr);
+			px(x, y, s < .45 ? "#ff917e" : s < .8 ? "#ee6358" : s < 1.1 ? "#cf4a47" : "#a63a3d");
+		}
+	[[-6,-5,4],[5,-8,3],[-9,5,3],[6,7,4],[1,1,2],[10,0,2],[-2,10,2]].forEach(([dx, dy, r]) => {
+		ellipse(mx + dx, my + dy, r, r, "#b8423f");
+		ellipse(mx + dx - 1, my + dy - 1, r - 1.2, r - 1.2, "#c84c47");
+	});
+
+	/* colinas */
+	function hill(base, terms, fill, rim, extra) {
+		for (let x = 0; x < W; x++) {
+			let y0 = base;
+			terms.forEach(([a, f, p]) => y0 += a * Math.sin(x * f + p));
+			if (extra) y0 += extra(x);
+			y0 = Math.floor(y0);
+			g.fillStyle = fill; g.fillRect(x, y0, 1, H - y0);
+			if (rim) px(x, y0, rim);
+		}
+	}
+
+	hill(78, [[7, .03, 2], [3, .09, .4]], "#58343c", "#7a4a50");
+	hill(86, [[6, .045, 0], [3, .11, 1.3], [2, .23, 2]], "#6b4549", "#8f6165");
+
+	/* castillo */
+	const castleColor = "#170b13", castleLight = "#2d1824", base = 132;
+	const towers = [
+		{ x: 184, w: 7, h: 44, s: 22 }, { x: 193, w: 6, h: 60, s: 32 },
+		{ x: 202, w: 9, h: 74, s: 38 }, { x: 214, w: 6, h: 54, s: 28 },
+		{ x: 223, w: 8, h: 46, s: 22 }, { x: 233, w: 5, h: 34, s: 16 },
+		{ x: 240, w: 6, h: 24, s: 12 }
+	];
+	// bloque principal
+	g.fillStyle = castleColor; g.fillRect(186, base - 52, 56, 52);
+	for (let x = 186; x < 242; x += 4) { g.fillRect(x, base - 55, 2, 3); }
+	towers.forEach(t => {
+		const top = base - t.h;
+		g.fillStyle = castleColor; g.fillRect(t.x, top, t.w, t.h);
+		g.fillStyle = castleLight; g.fillRect(t.x, top, 1, t.h);
+		const cx = t.x + t.w / 2;
+		for (let r = 0; r <= t.s; r++) {
+			const half = (t.w / 2 + 1) * (1 - r / t.s);
+			g.fillStyle = castleColor;
+			g.fillRect(Math.floor(cx - half), top - 1 - r, Math.max(1, Math.ceil(half * 2)), 1);
+		}
+		// ventanitas cálidas
+		for (let k = 0; k < 3; k++) if (rnd() > .45) px(t.x + 2 + Math.floor(rnd() * (t.w - 3)), top + 8 + k * 11, "#ff7a3a");
+	});
+
+	/* colina media (tapa la base del castillo) */
+	hill(106, [[7, .04, 1], [4, .1, 2.2], [2, .27, .5]], "#463139", "#6a4a50",
+		x => -12 * Math.exp(-(((x - 212) / 34) ** 2)));
+
+	/* colina cercana (más alta en los bordes) */
+	hill(124, [[8, .05, 0], [3, .14, 1]], "#22161d", "#3d2a32",
+		x => -26 * Math.pow(Math.abs(x - W / 2) / (W / 2), 2.4));
+
+	/* río de lava */
+	const yStart = 98;
+	const cxAt = y => {
+		const t = (y - yStart) / (H - yStart);
+		return 128 + Math.sin(t * 7.2) * 20 * Math.min(1, t * 2.4);
+	};
+	for (let y = yStart; y < H; y++) {
+		const t = (y - yStart) / (H - yStart);
+		const c = cxAt(y);
+		const half = 1.5 + t * 15 + Math.sin(y * .5) * .7;
+		for (let x = Math.floor(c - half - 6); x <= c + half + 6; x++) {
+			const d = Math.abs(x - c) / half;
+			if (d > 1.25) {
+				const glow = 1 - (d - 1.25) / ((6 / half) + .01);
+				if (glow > BAYER[y & 3][x & 3] + .25) px(x, y, "#7a2a22");
+				continue;
+			}
+			let col = d > 1 ? "#2a0c10" : d > .8 ? "#8f1a0a" : d > .5 ? "#e5420e" : d > .22 ? "#ff8a1c" : "#ffc43a";
+			if (d <= 1 && rnd() < .05) col = "#ffe27a";
+			px(x, y, col);
+		}
+	}
+	// charcos de lava abajo
+	ellipse(12, 140, 22, 4, "#2a0c10"); ellipse(12, 140, 20, 3, "#8f1a0a"); ellipse(13, 140, 15, 2, "#e5420e"); ellipse(14, 140, 8, 1, "#ff9a22");
+	ellipse(245, 141, 18, 3, "#2a0c10"); ellipse(245, 141, 16, 2, "#8f1a0a"); ellipse(245, 141, 11, 1.4, "#e5420e");
+
+	/* árboles secos */
+	function line(x0, y0, x1, y1, c) {
+		x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
+		const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+		const sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+		let err = dx - dy;
+		for (;;) {
+			px(x0, y0, c);
+			if (x0 === x1 && y0 === y1) break;
+			const e2 = 2 * err;
+			if (e2 > -dy) { err -= dy; x0 += sx; }
+			if (e2 < dx) { err += dx; y0 += sy; }
+		}
+	}
+	function branch(x, y, a, len, depth) {
+		const ex = x + Math.cos(a) * len, ey = y - Math.sin(a) * len;
+		line(x, y, ex, ey, "#0d070c");
+		if (depth >= 3) line(x + 1, y, ex + 1, ey, "#0d070c");
+		if (depth <= 0) return;
+		branch(ex, ey, a + .5 + rnd() * .5, len * .72, depth - 1);
+		branch(ex, ey, a - .5 - rnd() * .5, len * .7, depth - 1);
+		if (rnd() > .6) branch(ex, ey, a + (rnd() - .5) * .4, len * .6, depth - 1);
+	}
+	branch(24, 120, Math.PI / 2 + .1, 17, 4);
+	branch(246, 118, Math.PI / 2 - .15, 15, 4);
+	branch(64, 113, Math.PI / 2, 9, 3);
+	branch(208, 124, Math.PI / 2 + .2, 8, 3);
+
+	/* viñeta tramada */
+	for (let y = 0; y < H; y++)
+		for (let x = 0; x < W; x++) {
+			const d = Math.hypot((x - W / 2) / (W / 2), (y - H / 2) / (H / 2));
+			if (d > .75 && (d - .75) * 1.1 > BAYER[y & 3][x & 3]) px(x, y, "#0a0306");
+		}
+})();
+
+/* ---------- textura de piedra de la tarjeta ---------- */
+(function () {
+	const tex = document.getElementById("tex");
+	const card = tex.parentElement;
+	const S = 4;
+
+	function hash(a, b) {
+		let t = (Math.imul(a, 374761393) + Math.imul(b, 668265263)) >>> 0;
+		t = Math.imul(t ^ (t >>> 13), 1274126177) >>> 0;
+		return ((t ^ (t >>> 16)) >>> 0) / 4294967296;
+	}
+
+	function paint() {
+		const w = Math.max(20, Math.ceil(card.offsetWidth / S));
+		const h = Math.max(20, Math.ceil(card.offsetHeight / S));
+		tex.width = w; tex.height = h;
+		const g = tex.getContext("2d");
+		const rnd = mulberry32(21);
+		const px = (x, y, c) => { g.fillStyle = c; g.fillRect(x, y, 1, 1); };
+
+		const stone = ["#6b6b72", "#7c7c83", "#5a5a61", "#8d8d94", "#64646b"];
+		const brick = ["#243040", "#2a3647", "#202a39", "#27323f"];
+
+		for (let y = 0; y < h; y++)
+			for (let x = 0; x < w; x++) {
+				const edge = Math.min(x, y, w - 1 - x, h - 1 - y);
+				if (edge < 2) {
+					px(x, y, stone[Math.floor(rnd() * stone.length)]);
+				} else if (edge === 2) {
+					px(x, y, "#15171d");
+				} else {
+					const ly = y - 3;
+					const row = Math.floor(ly / 5);
+					const lx = x - 3 + (row % 2 ? 4 : 0);
+					if (ly % 5 === 4 || lx % 8 === 7) { px(x, y, "#0b0e14"); continue; }
+					const id = hash(row, Math.floor(lx / 8));
+					let c = id < .07 ? "#10131a" : brick[Math.floor(id * 97) % brick.length];
+					if (ly % 5 === 0 && id >= .07) c = "#33425a";
+					if (rnd() < .04) c = "#1a2230";
+					px(x, y, c);
+				}
+			}
+
+		// grietas
+		for (let k = 0; k < 7; k++) {
+			let x = Math.floor(rnd() * w), y = Math.floor(rnd() * h);
+			const len = 5 + Math.floor(rnd() * 10);
+			for (let i = 0; i < len; i++) {
+				px(x, y, "#0a0c10");
+				x += Math.floor(rnd() * 3) - 1; y += Math.floor(rnd() * 3) - 1;
+				x = Math.max(0, Math.min(w - 1, x)); y = Math.max(0, Math.min(h - 1, y));
+			}
+		}
+		// esquinas recortadas
+		[[0,0],[w-1,0],[0,h-1],[w-1,h-1]].forEach(([cx, cy]) => g.clearRect(cx, cy, 1, 1));
+	}
+
+	paint();
+	addEventListener("resize", paint);
+	if (document.fonts && document.fonts.ready) document.fonts.ready.then(paint);
+})();
+</script>
+
 </body>
 </html>

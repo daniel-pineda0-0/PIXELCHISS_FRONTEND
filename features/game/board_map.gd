@@ -1,11 +1,11 @@
 class_name BoardMap
 extends RefCounted
-## Traduce los ids de casilla del servidor (0-99, tablero v4-100) a celdas de los
+## Traduce los ids de casilla del servidor (0-99, tablero v5-100) a celdas de los
 ## dos dibujos del tablero: la franja del mundo (un chunk por asiento) y el minimapa.
 ## Solo datos y cuentas. Para saber en qué casilla está una ficha: piece_cell_id().
 ##
 ## Ids: 0-67 recorrido (sector de 17 por asiento; la salida del asiento es 17*asiento+5,
-## y es también donde acaba la vuelta; el inicio del sector, 17*asiento, es un seguro normal). 68-99 corredores (8 por asiento, la corona es
+## y es donde empieza la ficha; el inicio del sector, 17*asiento, es el seguro de entrada al corredor final). 68-99 corredores (8 por asiento, la corona es
 ## el último). Las casas no son casillas: una ficha HOME se dibuja en minimap_home() o
 ## en la celda de PrisonCell de su chunk.
 
@@ -13,6 +13,20 @@ const SEATS := 4
 const SECTOR := 17
 const TRACK_COUNT := 68
 const LANE_LEN := 8
+## Indice (dentro del sector) del seguro de entrada al corredor final: bajo el esta la escalera.
+## Valor de respaldo (sin tablero cargado). El real se lee de la ruta del servidor: stairs_index().
+## v5-100: es el seguro del inicio del sector (id 17*asiento), cinco casillas ANTES de la salida.
+const STAIRS_INDEX := 0
+## Casas: las 4 fichas de cada asiento viven en el SUELO DEL FONDO de su zona, justo detras de la fila de
+## casillas (no hay losa ni casilla), cada una en su propio hueco dibujado por HomeCrowd/HomeSlot: monton
+## de arena, bloque de hielo, charco de acido o de lava. Las posiciones se miden desde el centro de la
+## casilla (-1, 3) del chunk hasta los PIES de la ficha; la casilla mide 32 y su borde de arriba esta en
+## y=-16, asi que con y entre -42 y -30 quedan apoyadas en el suelo detras de la fila y no flotando.
+## HOME_CENTER mueve el grupo (x: frente a la puerta/arco/castillo de cada fondo; y: altura del suelo);
+## HOME_SLOT es el reparto de las 4 fichas (la n usa el hueco n), irregular para que no parezca una fila.
+## Por asiento: rojo, azul, verde, dorado.
+const HOME_CENTER: Array[Vector2] = [Vector2(8, -36), Vector2(70, -36), Vector2(44, -34), Vector2(-96, -36)]
+const HOME_SLOT: Array[Vector2] = [Vector2(-58, -7), Vector2(-21, 3), Vector2(15, -4), Vector2(52, 5)]
 const LANE_BASE := 68
 const CELL_COUNT := 100
 
@@ -144,7 +158,7 @@ const MINIMAP_LANES: Array = [
 # --- Franja del mundo (un chunk de player_ground por asiento) -----------------
 
 const PLAYER_GROUND_TRACK: Array[Vector2i] = [
-	Vector2i(7, 3), # SEGURO DE ENTRADA A CORREDOR (índice 0)
+	Vector2i(7, 3), # seguro (índice 0) y compuerta de la escalera al corredor
 	Vector2i(6, 3),
 	Vector2i(5, 3),
 	Vector2i(4, 3),
@@ -194,6 +208,34 @@ static func _div(a: int, b: int) -> int:
 
 static func is_valid_id(id: int) -> bool:
 	return id >= 0 and id < CELL_COUNT
+
+## Pies de la ficha `number` en casa del `seat`, desde el centro de la casilla (-1, 3) del chunk.
+static func home_offset(seat: int, number: int) -> Vector2:
+	return HOME_CENTER[posmod(seat, SEATS)] + HOME_SLOT[posmod(number, HOME_SLOT.size())]
+
+## Progreso en el que la ficha esta sobre la casilla desde la que baja al corredor: el ultimo progreso comun,
+## el que va justo antes del primero del corredor (63 en v5-100: el seguro de entrada, no la salida).
+## Se lee de la ruta del servidor, asi que si el servidor cambia el punto de entrada el cliente lo sigue.
+static func stairs_progress() -> int:
+	if Board.is_loaded:
+		var path := Board.route(0, 0)
+		for i in range(path.size() - 1):
+			if int(path[i]) < LANE_BASE and int(path[i + 1]) >= LANE_BASE:
+				return i
+	return 63
+
+## Indice (dentro del sector) de la casilla con la compuerta/escalera: la de ese progreso.
+static func stairs_index() -> int:
+	if Board.is_loaded:
+		var path := Board.route(0, 0)
+		var i := stairs_progress()
+		if i >= 0 and i < path.size():
+			return posmod(int(path[i]), SECTOR)
+	return STAIRS_INDEX
+
+## Celda de la franja donde esta la compuerta de la escalera.
+static func stairs_cell() -> Vector2i:
+	return PLAYER_GROUND_TRACK[stairs_index()]
 
 ## Franja: {"seat": chunk (= asiento del sector), "cell": Vector2i}; {} si el id no existe.
 static func strip_cell(id: int) -> Dictionary:

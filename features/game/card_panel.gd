@@ -32,7 +32,7 @@ var _reveal_left := 0.0
 var _pending_events: Array = []
 
 func _ready() -> void:
-	GameNet.events_received.connect(_on_events)
+	Presenter.events_shown.connect(_on_events)
 
 func _on_events(events: Array, _version: int) -> void:
 	for e in events:
@@ -61,9 +61,9 @@ func _process(delta: float) -> void:
 			_panel.visible = false
 
 func _card_state() -> Dictionary:
-	if GameNet.state.get("status") != "ACTIVE":
+	if Presenter.view().get("status") != "ACTIVE":
 		return {}
-	var card: Variant = GameNet.state.get("card")
+	var card: Variant = Presenter.view().get("card")
 	return card if card is Dictionary else {}
 
 # --- Carta que pide objetivo -------------------------------------------------------------------
@@ -83,6 +83,7 @@ func _open_challenge(card: Dictionary) -> void:
 		_hint.text = "%s elige un objetivo" % GameText.who(pid)
 	_hint.visible = _hint.text != ""
 	_panel.visible = true
+	Sfx.play(&"card_draw")
 	_panel.reset_size.call_deferred()
 
 func _hint_for(effect_code: String) -> String:

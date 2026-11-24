@@ -2,16 +2,7 @@
 
 [ext_resource type="Script" uid="uid://b6rtw6b6v60h7" path="res://features/game/trivia_ui.gd" id="1_xfy53"]
 [ext_resource type="FontFile" uid="uid://bbbnsoretj02p" path="res://service/assets/ui/theme/PressStart2P.ttf" id="font"]
-
-[sub_resource type="LabelSettings" id="LS_who"]
-resource_local_to_scene = true
-font = ExtResource("font")
-font_size = 8
-
-[sub_resource type="LabelSettings" id="LS_prompt"]
-resource_local_to_scene = true
-font = ExtResource("font")
-font_size = 8
+[ext_resource type="Theme" uid="uid://ds620wlne31r1" path="res://service/assets/ui/theme/pixel_theme.tres" id="theme"]
 
 [sub_resource type="LabelSettings" id="LS_timer"]
 resource_local_to_scene = true
@@ -23,82 +14,139 @@ resource_local_to_scene = true
 font = ExtResource("font")
 font_size = 8
 
+[sub_resource type="StyleBoxFlat" id="SB_question"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.04, 0.045, 0.07, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.35, 0.35, 0.35, 1)
+anti_aliasing = false
+
+[sub_resource type="StyleBoxFlat" id="SB_bar_bg"]
+bg_color = Color(0.03, 0.03, 0.05, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.35, 0.35, 0.35, 1)
+anti_aliasing = false
+
+[sub_resource type="StyleBoxFlat" id="SB_bar_fill"]
+bg_color = Color(0.95, 0.75, 0.25, 1)
+anti_aliasing = false
+
 [node name="TriviaUI" type="Control" unique_id=51980602]
 layout_mode = 3
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme = ExtResource("theme")
 script = ExtResource("1_xfy53")
 
-[node name="PromptContainer" type="PanelContainer" parent="." unique_id=1529705539]
-custom_minimum_size = Vector2(300, 0)
+[node name="Dim" type="ColorRect" parent="."]
+unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -58.0
-offset_top = -68.5
-offset_right = 58.0
-offset_bottom = 68.5
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.6)
 
-[node name="MarginContainer" type="MarginContainer" parent="PromptContainer" unique_id=249130439]
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="PromptContainer" type="PanelContainer" parent="Center"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(330, 0)
 layout_mode = 2
-theme_override_constants/margin_left = 8
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 8
-theme_override_constants/margin_bottom = 8
 
-[node name="VBoxContainer" type="VBoxContainer" parent="PromptContainer/MarginContainer" unique_id=569722191]
+[node name="Margin" type="MarginContainer" parent="Center/PromptContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 2
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 2
+theme_override_constants/margin_bottom = 0
+
+[node name="VBox" type="VBoxContainer" parent="Center/PromptContainer/Margin"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="WhoLabel" type="Label" parent="PromptContainer/MarginContainer/VBoxContainer" unique_id=1370639348]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(284, 0)
+[node name="TitleLabel" type="Label" parent="Center/PromptContainer/Margin/VBox"]
 layout_mode = 2
-label_settings = SubResource("LS_who")
+theme_override_colors/font_color = Color(1, 0.85, 0.35, 1)
+theme_override_font_sizes/font_size = 16
+text = "TRIVIA"
+horizontal_alignment = 1
+
+[node name="WhoLabel" type="Label" parent="Center/PromptContainer/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="PromptLabel" type="Label" parent="PromptContainer/MarginContainer/VBoxContainer" unique_id=542677129]
+[node name="HSeparator" type="HSeparator" parent="Center/PromptContainer/Margin/VBox"]
+layout_mode = 2
+
+[node name="QuestionPanel" type="PanelContainer" parent="Center/PromptContainer/Margin/VBox"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("SB_question")
+
+[node name="PromptLabel" type="Label" parent="Center/PromptContainer/Margin/VBox/QuestionPanel"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(284, 0)
+custom_minimum_size = Vector2(296, 36)
 layout_mode = 2
 text = "Pregunta"
-label_settings = SubResource("LS_prompt")
 horizontal_alignment = 1
+vertical_alignment = 1
 autowrap_mode = 3
 
-[node name="GridContainer" type="GridContainer" parent="PromptContainer/MarginContainer/VBoxContainer" unique_id=835449166]
+[node name="GridContainer" type="GridContainer" parent="Center/PromptContainer/Margin/VBox"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/h_separation = 4
 theme_override_constants/v_separation = 4
 columns = 2
 
-[node name="TimerLabel" type="Label" parent="PromptContainer/MarginContainer/VBoxContainer" unique_id=619502561]
+[node name="TimerBar" type="ProgressBar" parent="Center/PromptContainer/Margin/VBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(284, 0)
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+theme_override_styles/background = SubResource("SB_bar_bg")
+theme_override_styles/fill = SubResource("SB_bar_fill")
+max_value = 1.0
+step = 0.001
+value = 1.0
+show_percentage = false
+
+[node name="TimerLabel" type="Label" parent="Center/PromptContainer/Margin/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 label_settings = SubResource("LS_timer")
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="ResultLabel" type="Label" parent="PromptContainer/MarginContainer/VBoxContainer" unique_id=59415183]
+[node name="ResultLabel" type="Label" parent="Center/PromptContainer/Margin/VBox"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(284, 0)
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 label_settings = SubResource("LS_result")
 horizontal_alignment = 1

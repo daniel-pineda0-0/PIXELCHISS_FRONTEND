@@ -20,7 +20,7 @@ signal view_step(direction: int)    # -1 izquierda, 1 derecha, 0 soltó el botó
 
 const SHARED_CELL_SPACING := 2.0
 const MINIMAP_PIECE := preload("res://features/game/game_pice.tscn")
-const HOVER_RADIUS := 6.0          # px del minimapa: qué tan cerca de una casilla hay que pasar para ver su letrero
+const HOVER_RADIUS := 9.0          # px del minimapa: qué tan cerca de una casilla hay que pasar para ver su letrero
 const SEAT_NAMES := ["Rojo", "Azul", "Verde", "Amarillo"]
 const RESULT_DELAY := 1.2           # deja ver el último movimiento antes de la pantalla final
 const LOW_TIME := 10                # segundos: el cronómetro se pone rojo
@@ -81,10 +81,12 @@ var _card_nodes: Array[PlayerCardGame] = []  # tarjetas del HUD, en el orden de 
 var _cards := {}                    # asiento -> PlayerCardGame
 var _cards_ready := false
 var _tick := 0.0
+var _last_beep := -1                 # ultimo segundo en que sono el tic de cuenta regresiva
 var _confirmed_roll := ""           # rollId cuya animación ya confirmé
 var _confirm_tries := {}            # rollId -> intentos de confirmación (para no reintentar sin fin)
 var _end_armed_version := -1         # versión en la que ya avisé "puedes capturar" antes de pasar
 var _result_scheduled := false
+var _dice_overlay: DiceOverlay
 var _last_dice := {}                # asiento -> últimos dados que sacó (se conservan entre turnos)
 var _pending_events: Array = []     # eventos en espera mientras ruedan los dados
 var _was_holding := false
@@ -99,6 +101,12 @@ func _ready() -> void:
 	_right_button.button_down.connect(func(): view_step.emit(1))
 	_right_button.button_up.connect(func(): view_step.emit(0))
 
+	_dice_overlay = DiceOverlay.new()
+	var overlay_host := Control.new()               # CanvasLayer no tiene tamaño: un Control a pantalla completa lo aloja
+	overlay_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay_host.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(overlay_host)
+	overlay_host.add_child(_dice_overlay)
 	_roll_button.pressed.connect(_on_roll_pressed)
 	_roll_button.focus_mode = Control.FOCUS_NONE
 	_end_button.pressed.connect(_on_end_turn_pressed)
@@ -109,13 +117,18 @@ func _ready() -> void:
 			child.visible = false          # se muestran según cuántos jugadores haya
 			_card_nodes.append(child)
 
-	GameNet.state_changed.connect(_on_state_changed)
-	GameNet.busy_changed.connect(func(_busy: bool): _refresh_turn(GameNet.state))
+	Presenter.state_shown.connect(_on_state_changed)
+	Presenter.idle_changed.connect(_on_presenter_idle)
+	GameNet.busy_changed.connect(func(_busy: bool): _refresh_turn(_view()))
 	GameNet.legal_moves_changed.connect(_on_legal_moves)
-	GameNet.events_received.connect(_on_events)
+	Presenter.events_shown.connect(_on_events)
 	GameNet.action_rejected.connect(_on_action_rejected)
-	if not GameNet.state.is_empty():
-		_on_state_changed(GameNet.state)
+	if not Presenter.shown.is_empty():
+		_on_state_changed(Presenter.shown)
+
+func _on_presenter_idle(_idle: bool) -> void:
+	_refresh_turn(_view())
+	_update_turn_label()
 
 func _exit_tree() -> void:
 	RollHold.clear()
@@ -123,11 +136,10 @@ func _exit_tree() -> void:
 ## Mientras ruedan los dados no se redibuja nada: al terminar, _process aplica el
 ## último estado (ver RollHold).
 func _on_state_changed(state: Dictionary) -> void:
-	RollHold.observe(state)           # una tirada nueva pausa el redibujo hasta que paren los dados
+	_refresh_turn(state)              # lo que reproduce el Presenter: turno, reloj y dados salen de aqui
 	if RollHold.active():
 		return
 	_refresh_minimap(state)
-	_refresh_turn(state)
 
 # --- Tarjetas de jugador ---------------------------------------------------------------
 
@@ -156,43 +168,55 @@ func _ensure_cards(state: Dictionary) -> void:
 
 # --- Estado del turno -----------------------------------------------------------------------
 
+## Estado que se esta MOSTRANDO (el del Presenter); el vivo del servidor puede ir unas jugadas adelante.
+func _view() -> Dictionary:
+	return Presenter.view()
+
+func _anim_status() -> String:
+	return str(_turn().get("animationStatus", "NONE"))
+
+## Es tu turno segun lo que ves Y segun el servidor, y ya se termino de mostrar todo lo anterior.
+func _mine_turn() -> bool:
+	return _is_playing() and str(_turn().get("playerId", "")) == GameNet.me and GameNet.is_my_turn() and Presenter.idle()
+
 func _turn() -> Dictionary:
-	var turn: Variant = GameNet.state.get("turn")
+	var turn: Variant = _view().get("turn")
 	return turn if turn is Dictionary else {}
 
 func _is_playing() -> bool:
-	return GameNet.state.get("status") == "ACTIVE"
+	return _view().get("status") == "ACTIVE"
 
 func _has_challenge() -> bool:
-	return GameNet.state.get("trivia") != null or GameNet.state.get("card") != null
+	return _view().get("trivia") != null or _view().get("card") != null
 
 func _can_roll() -> bool:
-	return _is_playing() and GameNet.is_my_turn() and not bool(_turn().get("rolled", false)) \
+	return _mine_turn() and not bool(_turn().get("rolled", false)) \
 			and not _has_challenge() and not GameNet.busy and not RollHold.active()
 
 func _can_end_turn() -> bool:
 	# END_TURN exige tirada confirmada y ninguna elección de corona pendiente (guía §6.7).
-	return _is_playing() and GameNet.is_my_turn() and bool(_turn().get("rolled", false)) \
-			and GameNet.animation_status() == "COMPLETED" \
+	return _mine_turn() and bool(_turn().get("rolled", false)) \
+			and _anim_status() == "COMPLETED" \
 			and not bool(_turn().get("crownChoiceRequired", false)) \
 			and not _has_challenge() and not GameNet.busy and not RollHold.active()
 
 ## ¿Tengo alguna ficha en el tablero? Sin ellas, cada tirada sin par es un intento de salida.
 func _has_board_piece(pid: String) -> bool:
-	for piece in GameNet.state.get("pieces", []):
+	for piece in _view().get("pieces", []):
 		if str(piece.get("ownerId", "")) == pid and str(piece.get("status", "")) == "BOARD":
 			return true
 	return false
 
 func _has_home_piece(pid: String) -> bool:
-	for piece in GameNet.state.get("pieces", []):
+	for piece in _view().get("pieces", []):
 		if str(piece.get("ownerId", "")) == pid and BoardMap.is_home(piece):
 			return true
 	return false
 
 func _refresh_turn(state: Dictionary) -> void:
-	if _hud == null or state.is_empty() or RollHold.active():
+	if _hud == null or state.is_empty():
 		return
+	var holding := RollHold.active()           # durante la pausa solo se retienen los dados: el turno es el real
 	_ensure_cards(state)
 	var turn := _turn()
 	var playing := _is_playing()
@@ -200,7 +224,7 @@ func _refresh_turn(state: Dictionary) -> void:
 	var active_seat := int(GameNet.player(active_id).get("seat", -1)) if active_id != "" else -1
 	var dice: Array = turn.get("dice", []) if turn.get("dice") is Array else []
 	var consumed: Array = turn.get("consumed", []) if turn.get("consumed") is Array else []
-	if active_seat >= 0 and dice.size() == 2:
+	if active_seat >= 0 and dice.size() == 2 and not holding:
 		_last_dice[active_seat] = dice            # también cubre entrar a media partida
 	var crowned := _crowned_by_seat(state)
 	var effects := _effects_by_seat(state)
@@ -210,11 +234,12 @@ func _refresh_turn(state: Dictionary) -> void:
 		var is_active: bool = seat == active_seat
 		card.set_active(is_active)
 		# Cada tarjeta conserva la última tirada de su jugador; solo el del turno marca los dados gastados.
-		card.show_dice(_last_dice.get(seat, []), consumed if is_active else [])
+		if not holding:
+			card.show_dice(_last_dice.get(seat, []), consumed if is_active else [])
 		card.set_crowned(int(crowned.get(seat, 0)))
 		card.set_effects(effects.get(seat, []))
 
-	if _dices != null:
+	if _dices != null and not holding:
 		var my_seat := int(GameNet.player(GameNet.me).get("seat", -1))
 		_dices.show_values(_last_dice.get(my_seat, []), consumed if active_id == GameNet.me else [])
 	if _end_button != null:
@@ -242,7 +267,7 @@ func _effects_by_seat(state: Dictionary) -> Dictionary:
 	return by_seat
 
 func _update_turn_label() -> void:
-	if GameNet.state.is_empty():
+	if _view().is_empty():
 		_turn_banner.set_message("Conectando...")
 		return
 	if not _is_playing():
@@ -255,11 +280,11 @@ func _update_turn_label() -> void:
 	var rolled := bool(turn.get("rolled", false))
 	var choosing_crown := bool(turn.get("crownChoiceRequired", false))
 	var text := ""
-	if GameNet.state.get("trivia") != null:
+	if _view().get("trivia") != null:
 		text = "Responde la trivia" if mine else "%s responde trivia" % who
-	elif GameNet.state.get("card") != null:
+	elif _view().get("card") != null:
 		text = "Elige un objetivo" if mine else "%s elige objetivo" % who
-	elif rolled and GameNet.animation_status() == "WAITING":
+	elif rolled and _anim_status() == "WAITING":
 		text = "Tus dados..." if mine else "Dados de %s" % who
 	elif choosing_crown:
 		text = "Tres pares: elige qué coronar" if mine else "%s elige qué coronar" % who
@@ -274,11 +299,12 @@ func _update_turn_label() -> void:
 		else:
 			text = "Mueve una ficha"
 	else:
-		text = "Turno de " + who
+		text = "Turno de " + who + " (bot)" if _is_bot(active_id) else "Turno de " + who
 	var seconds := _seconds_left()
 	if seconds >= 0:
 		text += "  %ds" % seconds
-	_turn_banner.set_message(text, seconds >= 0 and seconds <= LOW_TIME)
+	var seat_tint: Color = BoardMap.SEAT_COLORS[posmod(int(GameNet.player(active_id).get("seat", 0)), BoardMap.SEATS)]
+	_turn_banner.set_message(text, seconds >= 0 and seconds <= LOW_TIME, mine, seat_tint)
 
 ## Plazo (Unix ms) del reloj que corresponde a la fase actual (guía §8.1). `turn.deadline` por sí
 ## solo no sirve: cambia de significado y durante una trivia NO es un reloj activo. 0 = sin reloj.
@@ -289,7 +315,7 @@ func _update_turn_label() -> void:
 ##   moviendo                → turn.deadline          (30 s desde confirmar, si movementStartedAt != null)
 ## Las liberaciones por par y el tercer par no abren reloj de movimiento: ahí no se muestra nada.
 func _active_deadline() -> float:
-	var state := GameNet.state
+	var state := _view()
 	var turn := _turn()
 	if state.get("trivia") is Dictionary:
 		return float(state.trivia.get("deadline", 0))
@@ -297,7 +323,7 @@ func _active_deadline() -> float:
 		return float(state.card.get("deadline", 0))
 	if not bool(turn.get("rolled", false)):
 		return float(turn.get("deadline", 0))
-	match GameNet.animation_status():
+	match _anim_status():
 		"WAITING":
 			return float(turn.get("animationDeadline", 0))
 		"COMPLETED":
@@ -306,6 +332,23 @@ func _active_deadline() -> float:
 
 ## Segundos que quedan del reloj de la fase. Solo se muestra: el servidor decide cuándo vence y
 ## pasa el turno por su cuenta (no se cierra nada desde aquí). -1 = sin reloj.
+## Un tic por segundo en los ultimos 5 segundos de TU plazo.
+func _countdown_beep() -> void:
+	var left := _seconds_left() if _mine_turn() or _has_my_challenge() else -1
+	if left >= 1 and left <= 5:
+		if left != _last_beep:
+			_last_beep = left
+			Sfx.play(&"countdown", 0.0, 1.0 + float(5 - left) * 0.06)
+	else:
+		_last_beep = -1
+
+func _has_my_challenge() -> bool:
+	var trivia: Variant = _view().get("trivia")
+	if trivia is Dictionary:
+		return str(trivia.get("playerId", "")) == GameNet.me
+	var card: Variant = _view().get("card")
+	return card is Dictionary and str(card.get("playerId", "")) == GameNet.me
+
 func _seconds_left() -> int:
 	var deadline := _active_deadline()
 	if deadline <= 0.0:
@@ -315,7 +358,7 @@ func _seconds_left() -> int:
 func _process(delta: float) -> void:
 	var holding := RollHold.active()
 	if _was_holding and not holding:
-		_on_state_changed(GameNet.state)          # lo que quedó en espera
+		_on_state_changed(_view())                # lo que quedó en espera
 		_on_legal_moves(GameNet.legal_moves)
 	_was_holding = holding
 	if not holding:
@@ -325,6 +368,7 @@ func _process(delta: float) -> void:
 	if _tick <= 0.0:
 		_tick = 0.2
 		_update_turn_label()
+		_countdown_beep()
 	if _dices_panel != null:
 		var pulse := 0.65 + 0.35 * sin(Time.get_ticks_msec() / 1000.0 * 6.0)
 		_dices_panel.modulate = Color(1.0, 1.0, pulse) if _can_roll() else Color.WHITE
@@ -335,7 +379,7 @@ func _process(delta: float) -> void:
 func _on_roll_pressed() -> void:
 	if not _is_playing():
 		return
-	if not GameNet.is_my_turn():                        # US-006 esc. 3: se bloquea fuera de turno
+	if not _mine_turn():                                # US-006 esc. 3: se bloquea fuera de turno
 		_toast("No es tu turno", true)
 		return
 	var turn := _turn()
@@ -381,7 +425,7 @@ func _can_capture() -> bool:
 func _on_end_turn_pressed() -> void:
 	if not _can_end_turn():
 		return
-	var version := int(GameNet.state.get("version", 0))
+	var version := int(_view().get("version", 0))
 	if _end_armed_version != version and _can_capture():
 		_end_armed_version = version
 		_toast("¡Puedes capturar! Pasar puede costarte una ficha", true)
@@ -431,6 +475,7 @@ func _handle_event(e: Variant) -> void:
 	match str(e.get("type", "")):
 		"TURN_CHANGED":
 			if str(data.get("playerId", "")) == GameNet.me:
+				Sfx.play(&"turn_mine")
 				_toast("¡Es tu turno!")
 		"ROLL_AVAILABLE":
 			_on_roll_available(data)
@@ -454,6 +499,7 @@ func _handle_event(e: Variant) -> void:
 			_toast("¡Tres pares! Elige una ficha para coronar" if chooser == GameNet.me \
 					else "¡Tres pares de %s!" % _short_name(_player_name(chooser)))
 		"PIECE_CROWNED":
+			Sfx.play(&"crown")
 			var crown_owner := _owner_of_piece(str(data.get("pieceId", "")))
 			_toast("¡Coronaste una ficha con tres pares!" if crown_owner == GameNet.me \
 					else "%s coronó una ficha con tres pares" % _short_name(_player_name(crown_owner)))
@@ -481,15 +527,27 @@ func _on_dice_rolled(data: Dictionary) -> void:
 	var values: Array = data.get("dice", []) if data.get("dice") is Array else []
 	if values.size() < 2:
 		return
-	RollHold.start()
-	_last_dice[int(GameNet.player(who).get("seat", -1))] = values
-	var card: PlayerCardGame = _cards.get(int(GameNet.player(who).get("seat", -1)))
+	var mine := who == GameNet.me
+	var delay := RollHold.start(mine)             # espera a que se vea terminar la jugada anterior
+	if delay > 0.05:
+		await get_tree().create_timer(delay).timeout
+	if not is_inside_tree():
+		return
+	var seat := int(GameNet.player(who).get("seat", -1))
+	Sfx.play(&"dice_roll", 0.0 if mine else -4.0)
+	get_tree().create_timer(RollHold.DICE_TIME).timeout.connect(Sfx.play.bind(&"dice_land"))
+	_last_dice[seat] = values
+	var card: PlayerCardGame = _cards.get(seat)
 	if card != null:
-		card.play_roll(values)                    # la tarjeta de quien tira (también la mía)
-	if who == GameNet.me and _dices != null:
+		card.play_roll(values)                    # la tarjeta de quien tira (tambien la mia)
+	if mine and _dices != null:
 		_dices.play_roll(values)                  # y el panel grande de abajo
+	if _dice_overlay != null:
+		var shown := "TU" if mine else _short_name(_player_name(who)).to_upper()
+		var tint: Color = BoardMap.SEAT_COLORS[posmod(seat, BoardMap.SEATS)] if seat >= 0 else Color.WHITE
+		_dice_overlay.play(values, shown, tint)   # dados grandes en el centro de la pantalla
 	if int(values[0]) == int(values[1]):
-		_toast("¡Pares!" if who == GameNet.me else "¡Pares de %s!" % _short_name(_player_name(who)))
+		_toast("¡Pares!" if mine else "¡Pares de %s!" % _short_name(_player_name(who)))
 
 func _on_piece_moved(data: Dictionary) -> void:
 	if data.get("cardId") != null:
@@ -497,16 +555,19 @@ func _on_piece_moved(data: Dictionary) -> void:
 		return
 	var owner_id := _owner_of_piece(str(data.get("pieceId", "")))
 	if str(data.get("status", "")) == "CROWNED":         # US-015
+		Sfx.play(&"crown")
 		_toast("¡Ficha coronada!" if owner_id == GameNet.me \
 				else "%s coronó una ficha" % _short_name(_player_name(owner_id)))
 	elif owner_id == GameNet.me and data.get("from") != null and data.get("to") != null:
 		var from_id := int(data.get("from"))
 		var to_id := int(data.get("to"))
 		if Board.is_safe(to_id) and not Board.is_safe(from_id):
+			Sfx.play(&"safe")
 			_toast("Ficha a salvo en zona segura")        # US-013 esc. 1
 
 func _on_piece_captured(data: Dictionary) -> void:
 	var victim := _owner_of_piece(str(data.get("pieceId", "")))
+	Sfx.play(&"captured" if victim == GameNet.me else &"capture")
 	if str(data.get("reason", "")) == "HOME_RELEASE":        # salieron en la casilla de otro color
 		if victim == GameNet.me:
 			_toast("Tu ficha volvió a casa: ocupaba una salida ajena", true)
@@ -532,6 +593,7 @@ func _on_release_summary(data: Dictionary) -> void:
 	var count := int(data.get("count", 0))
 	if count <= 0:
 		return
+	Sfx.play(&"release")
 	var many := "fichas" if count > 1 else "ficha"
 	_toast("Sacaste %d %s" % [count, many] if owner_id == GameNet.me \
 			else "%s sacó %d %s" % [_short_name(_player_name(owner_id)), count, many])
@@ -548,6 +610,7 @@ func _on_roll_available(data: Dictionary) -> void:
 
 ## SOPLAR: no capturaste teniendo una captura legal y una ficha tuya vuelve a casa.
 func _on_piece_blown(data: Dictionary) -> void:
+	Sfx.play(&"blow")
 	var owner_id := str(data.get("playerId", ""))
 	if owner_id == GameNet.me:
 		_toast("¡Soplaron tu ficha! Debías capturar", true)
@@ -604,8 +667,8 @@ func _schedule_result() -> void:
 		_show_result()
 
 func _show_result() -> void:
-	var status := str(GameNet.state.get("status", ""))
-	var winner_id := str(GameNet.state.get("winnerId", "")) if GameNet.state.get("winnerId") != null else ""
+	var status := str(_view().get("status", ""))
+	var winner_id := str(_view().get("winnerId", "")) if _view().get("winnerId") != null else ""
 	var title := "FIN DE LA PARTIDA"
 	var detail := "La partida terminó sin ganador"
 	var swatch := Color(0.6, 0.6, 0.6)
@@ -619,6 +682,8 @@ func _show_result() -> void:
 				SEAT_NAMES[posmod(seat, SEAT_NAMES.size())] if seat >= 0 else "?"]
 		crowned_text = "4 fichas coronadas"
 
+	if status == "FINISHED" and winner_id != "":
+		Sfx.play(&"win" if winner_id == GameNet.me else &"lose")
 	_result_screen.show_result(title, detail, swatch, crowned_text)
 
 ## Vuelve al menú (el destino exacto está por confirmar).
@@ -631,6 +696,12 @@ func _on_result_back() -> void:
 func _player_name(pid: String) -> String:
 	return GameText.player_name(pid)
 
+func _is_bot(pid: String) -> bool:
+	for entry in Lobby.data.get("players", []):
+		if str(entry.get("user_id", "")) == pid:
+			return bool(entry.get("is_bot", false))
+	return false
+
 func _short_name(full_name: String) -> String:
 	return full_name if full_name.length() <= 10 else full_name.substr(0, 10)
 
@@ -640,7 +711,7 @@ func _owner_of_piece(piece_id: String) -> String:
 	if parts.size() < 4 or parts[0] != "seat":
 		return ""
 	var seat := int(parts[1])
-	for p in GameNet.state.get("players", []):
+	for p in _view().get("players", []):
 		if int(p.get("seat", -1)) == seat:
 			return str(p.get("id", ""))
 	return ""
@@ -683,7 +754,7 @@ func _cell_info(id: int) -> String:
 	else:
 		lines.append("Casilla común")
 	var counts := {}
-	for p in GameNet.state.get("pieces", []):
+	for p in _view().get("pieces", []):
 		var seat := BoardMap.seat_of_piece(p)
 		if seat >= 0 and BoardMap.piece_cell_id(p, seat) == id:
 			counts[seat] = int(counts.get(seat, 0)) + 1

@@ -2,7 +2,7 @@ extends Node2D
 ## Dos dados. show_values() los deja fijos (el ya usado, atenuado); play_roll() los
 ## agita un momento y los deja en los valores que mandó el servidor.
 
-const ROLL_TIME := 0.7
+const ROLL_TIME := 1.2
 const FRAME_TIME := 0.07
 const USED_TINT := Color(0.45, 0.45, 0.45)
 

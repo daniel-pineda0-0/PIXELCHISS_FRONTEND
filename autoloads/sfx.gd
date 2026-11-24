@@ -17,6 +17,10 @@ const SOUNDS: Array[StringName] = [
 	&"player_join", &"player_leave", &"bot_add", &"bot_remove", &"kick", &"load_done",
 	&"step", &"login_ok", &"fireball", &"explosion", &"collapse", &"rebuild",
 	&"vulture_1", &"vulture_2", &"eye_fly", &"eye_turn", &"eye_stare",
+	# partida
+	&"dice_roll", &"dice_land", &"release", &"capture", &"captured", &"blow", &"crown",
+	&"safe", &"trivia_start", &"trivia_right", &"trivia_wrong", &"card_draw", &"turn_mine",
+	&"countdown", &"win", &"lose",
 ]
 ## Sonidos que se eligen al azar de un grupo, con un descanso minimo entre dos.
 const GROUPS := {

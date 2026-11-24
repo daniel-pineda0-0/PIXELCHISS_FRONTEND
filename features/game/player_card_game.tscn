@@ -13,7 +13,7 @@ font_size = 8
 font_color = Color(1, 0.5, 0.45, 1)
 
 [node name="PlayerCardGame" type="Control" unique_id=939403117]
-custom_minimum_size = Vector2(40, 0)
+custom_minimum_size = Vector2(46, 76)
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_7dq3g")
@@ -30,9 +30,21 @@ texture = ExtResource("1_r1g4g")
 expand_mode = 4
 
 [node name="Avatar" type="TextureRect" parent="VBoxContainer/PlayerCard" unique_id=2059775717]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+unique_name_in_owner = true
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = -3.0
+offset_bottom = -3.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Dices" type="PanelContainer" parent="VBoxContainer" unique_id=1138294747]
 unique_name_in_owner = true
@@ -62,6 +74,9 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
+custom_minimum_size = Vector2(40, 0)
+clip_text = true
+text_overrun_behavior = 3
 mouse_filter = 0
 label_settings = SubResource("LS_effect")
 horizontal_alignment = 1

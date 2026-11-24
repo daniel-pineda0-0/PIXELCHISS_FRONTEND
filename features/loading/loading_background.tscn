@@ -1,65 +1,65 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bylrxpnm00ijr"]
 
-[ext_resource type="Texture2D" path="res://service/assets/backgrounds/loading/bg_blur.png" id="t_blur"]
-[ext_resource type="Texture2D" path="res://service/assets/backgrounds/loading/lava_glow.png" id="t_lava"]
-[ext_resource type="Texture2D" path="res://service/assets/backgrounds/loading/fog_far.png" id="t_fog_far"]
-[ext_resource type="Texture2D" path="res://service/assets/backgrounds/loading/fog_near.png" id="t_fog_near"]
-[ext_resource type="Texture2D" path="res://service/assets/backgrounds/loading/grain.png" id="t_grain"]
-[ext_resource type="Texture2D" path="res://service/assets/backgrounds/loading/rubble_fg.png" id="t_rubble"]
-[ext_resource type="Script" path="res://features/loading/loading_background.gd" id="s_bg"]
-[ext_resource type="Shader" path="res://features/loading/haze.gdshader" id="sh_haze"]
-[ext_resource type="Script" path="res://features/loading/embers.gd" id="s_embers"]
-
-[sub_resource type="CanvasItemMaterial" id="Add"]
-blend_mode = 1
+[ext_resource type="Shader" uid="uid://b7gf7g73s6crq" path="res://features/loading/haze.gdshader" id="sh_haze"]
+[ext_resource type="Script" uid="uid://c3ybytn8alp6s" path="res://features/loading/loading_background.gd" id="s_bg"]
+[ext_resource type="Script" uid="uid://4l527rlkhitp" path="res://features/loading/embers.gd" id="s_embers"]
+[ext_resource type="Texture2D" uid="uid://cbhwommi551vp" path="res://service/assets/backgrounds/loading/bg_blur.png" id="t_blur"]
+[ext_resource type="Texture2D" uid="uid://r0onxa28sj3j" path="res://service/assets/backgrounds/loading/fog_far.png" id="t_fog_far"]
+[ext_resource type="Texture2D" uid="uid://d353pdo42xrsg" path="res://service/assets/backgrounds/loading/fog_near.png" id="t_fog_near"]
+[ext_resource type="Texture2D" uid="uid://dufpgps0nibpm" path="res://service/assets/backgrounds/loading/grain.png" id="t_grain"]
+[ext_resource type="Texture2D" uid="uid://ckv3h4734bhnm" path="res://service/assets/backgrounds/loading/lava_glow.png" id="t_lava"]
+[ext_resource type="Texture2D" uid="uid://c3tl12ipfsb0r" path="res://service/assets/backgrounds/loading/rubble_fg.png" id="t_rubble"]
 
 [sub_resource type="ShaderMaterial" id="Haze"]
 shader = ExtResource("sh_haze")
 shader_parameter/strength = 1.6
 shader_parameter/speed = 0.6
 
-[node name="LoadingBackground" type="CanvasLayer"]
+[sub_resource type="CanvasItemMaterial" id="Add"]
+blend_mode = 1
+
+[node name="LoadingBackground" type="CanvasLayer" unique_id=32713712]
 layer = -1
 script = ExtResource("s_bg")
 
-[node name="BlurWorld" type="Node2D" parent="."]
+[node name="BlurWorld" type="Node2D" parent="." unique_id=184887652]
 
-[node name="Base" type="Sprite2D" parent="BlurWorld"]
+[node name="Base" type="Sprite2D" parent="BlurWorld" unique_id=1033890942]
 material = SubResource("Haze")
 texture = ExtResource("t_blur")
 centered = false
 
-[node name="LavaGlow" type="Sprite2D" parent="BlurWorld"]
-material = SubResource("Add")
+[node name="LavaGlow" type="Sprite2D" parent="BlurWorld" unique_id=573932450]
 modulate = Color(1, 1, 1, 0.15)
+material = SubResource("Add")
 texture = ExtResource("t_lava")
 centered = false
 
-[node name="FogFar" type="Parallax2D" parent="BlurWorld"]
-autoscroll = Vector2(-5, 0)
+[node name="FogFar" type="Parallax2D" parent="BlurWorld" unique_id=1530956658]
 repeat_size = Vector2(640, 0)
+autoscroll = Vector2(-5, 0)
 repeat_times = 3
 
-[node name="Sprite2D" type="Sprite2D" parent="BlurWorld/FogFar"]
+[node name="Sprite2D" type="Sprite2D" parent="BlurWorld/FogFar" unique_id=1474879800]
 texture = ExtResource("t_fog_far")
 centered = false
 
-[node name="FogNear" type="Parallax2D" parent="BlurWorld"]
-autoscroll = Vector2(11, 0)
+[node name="FogNear" type="Parallax2D" parent="BlurWorld" unique_id=615376971]
 repeat_size = Vector2(640, 0)
+autoscroll = Vector2(11, 0)
 repeat_times = 3
 
-[node name="Sprite2D" type="Sprite2D" parent="BlurWorld/FogNear"]
+[node name="Sprite2D" type="Sprite2D" parent="BlurWorld/FogNear" unique_id=690785316]
 texture = ExtResource("t_fog_near")
 centered = false
 
-[node name="Grain" type="Sprite2D" parent="."]
+[node name="Grain" type="Sprite2D" parent="." unique_id=782226425]
 texture = ExtResource("t_grain")
 centered = false
 
-[node name="Embers" type="Node2D" parent="."]
+[node name="Embers" type="Node2D" parent="." unique_id=356916953]
 script = ExtResource("s_embers")
 
-[node name="Rubble" type="Sprite2D" parent="."]
+[node name="Rubble" type="Sprite2D" parent="." unique_id=1720455546]
 texture = ExtResource("t_rubble")
 centered = false

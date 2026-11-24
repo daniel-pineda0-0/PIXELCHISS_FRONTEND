@@ -1,7 +1,7 @@
 extends Control
 ## Trivia de las casillas de carta (US-007).
 ##
-## Todo sale de `GameNet.state.trivia` y de TRIVIA_RESOLVED: aquí no se decide si
+## Todo sale de `Presenter.view().trivia` y de TRIVIA_RESOLVED: aquí no se decide si
 ## una respuesta es correcta (el servidor nunca manda la respuesta antes de
 ## resolver) ni se vence el tiempo (solo se muestra la cuenta atrás).
 ## - El jugador de `trivia.playerId` ve botones; los demás ven la pregunta y quién
@@ -12,7 +12,8 @@ extends Control
 ## la ficha termine de moverse antes de que salga la pregunta.
 
 const LABEL_WHITE := preload("res://service/assets/ui/prefabs/PixelFontWhite.tres")
-const TRIVIA_OPTION := preload("res://features/game/ui/trivia_option.tscn")
+const OPTION_SIZE := Vector2(150, 30)
+const LETTERS := ["A", "B", "C", "D", "E", "F"]
 const RESULT_TIME := 1.8
 const LOW_TIME := 5
 const OK_COLOR := Color(0.55, 1.0, 0.6)
@@ -21,15 +22,19 @@ const PICKED_COLOR := Color(1.0, 0.95, 0.5)
 const DISABLED_COLOR := Color(1, 1, 1, 0.6)
 const URGENT_COLOR := Color(1.0, 0.45, 0.4)
 
-@onready var _panel := $PromptContainer as PanelContainer
-@onready var _prompt := $PromptContainer/MarginContainer/VBoxContainer/PromptLabel as Label
-@onready var _grid := $PromptContainer/MarginContainer/VBoxContainer/GridContainer as GridContainer
+@onready var _panel: PanelContainer = %PromptContainer
+@onready var _dim: ColorRect = %Dim
+@onready var _prompt: Label = %PromptLabel
+@onready var _grid: GridContainer = %GridContainer
+@onready var _bar: ProgressBar = %TimerBar
 
 @onready var _who: Label = %WhoLabel
 @onready var _timer: Label = %TimerLabel
 @onready var _result: Label = %ResultLabel
 
-var _buttons: Array[TextureButton] = []
+var _buttons: Array[BaseButton] = []
+var _total := 0.0                  # segundos que tenia la cuenta atras al abrirse (para la barra)
+var _pop: Tween
 var _current := {}                  # trivia que está en pantalla
 var _shown_id := ""
 var _answered := false
@@ -39,8 +44,9 @@ var _pending_events: Array = []
 
 func _ready() -> void:
 	visible = false
+	_dim.color.a = 0.0
 
-	GameNet.events_received.connect(_on_events)
+	Presenter.events_shown.connect(_on_events)
 	GameNet.action_rejected.connect(func(_code: String, _message: String): _answered = false)
 
 func _on_events(events: Array, _version: int) -> void:
@@ -67,9 +73,9 @@ func _process(delta: float) -> void:
 	_update_live(trivia)
 
 func _trivia_state() -> Dictionary:
-	if GameNet.state.get("status") != "ACTIVE":
+	if Presenter.view().get("status") != "ACTIVE":
 		return {}
-	var trivia: Variant = GameNet.state.get("trivia")
+	var trivia: Variant = Presenter.view().get("trivia")
 	return trivia if trivia is Dictionary else {}
 
 # --- Abrir y cerrar ---------------------------------------------------------------------
@@ -86,18 +92,43 @@ func _open(trivia: Dictionary) -> void:
 	_prompt.text = str(trivia.get("prompt", ""))
 	_result.text = ""
 	_result.visible = false
+	_total = 0.0
+	_bar.visible = true
+	_bar.value = 1.0
+	_timer.label_settings.font_color = Color.WHITE
+	_dim.mouse_filter = Control.MOUSE_FILTER_STOP if mine else Control.MOUSE_FILTER_IGNORE    # quien responde no toca el tablero
 	var options: Array = trivia.get("options", []) if trivia.get("options") is Array else []
 	for i in options.size():
-		var button := TRIVIA_OPTION.instantiate() as TextureButton
-		_grid.add_child(button)                      # primero al árbol: set_text usa @onready
-		button.set_text(str(options[i]))
+		var button := Button.new()                   # estilo ladrillo del tema, igual que las opciones de ajustes
+		button.custom_minimum_size = OPTION_SIZE
+		button.focus_mode = Control.FOCUS_NONE
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		button.text = "%s  %s" % [LETTERS[i % LETTERS.size()], str(options[i])]
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_grid.add_child(button)
 		button.pressed.connect(_on_option_pressed.bind(i))
 		_buttons.append(button)
 	visible = true
+	Sfx.play(&"trivia_start")
 	_panel.reset_size.call_deferred()
+	_play_pop.call_deferred()
+
+## Entrada: el fondo se oscurece y la pestaña "salta" un poco hacia su tamano.
+func _play_pop() -> void:
+	if _pop != null:
+		_pop.kill()
+	_panel.pivot_offset = _panel.size * 0.5
+	_panel.scale = Vector2(0.88, 0.88)
+	_panel.modulate.a = 0.0
+	_pop = create_tween().set_parallel(true)
+	_pop.tween_property(_dim, "color:a", 0.6, 0.18)
+	_pop.tween_property(_panel, "modulate:a", 1.0, 0.14)
+	_pop.tween_property(_panel, "scale", Vector2.ONE, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 func _close() -> void:
 	visible = false
+	_dim.color.a = 0.0
+	_dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_clear_buttons()
 	_current = {}
 	_shown_id = ""
@@ -131,7 +162,12 @@ func _update_live(trivia: Dictionary) -> void:
 		_buttons[i].modulate = PICKED_COLOR if i == _picked else (DISABLED_COLOR if locked else Color.WHITE)
 	var seconds := GameText.seconds_until(trivia.get("deadline"))
 	_timer.text = "" if seconds < 0 else "%ds" % seconds
-	_timer.label_settings.font_color = URGENT_COLOR if seconds >= 0 and seconds <= LOW_TIME else Color.WHITE
+	var urgent := seconds >= 0 and seconds <= LOW_TIME
+	_timer.label_settings.font_color = URGENT_COLOR if urgent else Color.WHITE
+	if seconds >= 0:
+		_total = maxf(_total, float(seconds))
+		_bar.value = clampf(float(seconds) / maxf(_total, 1.0), 0.0, 1.0)
+	_bar.modulate = URGENT_COLOR if urgent else Color.WHITE
 
 # --- Resultado (TRIVIA_RESOLVED) -------------------------------------------------------
 
@@ -168,8 +204,11 @@ func _show_result(e: Dictionary) -> void:
 		text = "%s falló: recibe un nerf" % answerer
 	_result.text = text
 	_result.visible = true
+	if str(data.get("reason", "")) != "CATALOG_UNAVAILABLE":
+		Sfx.play(&"trivia_right" if correct else &"trivia_wrong", 0.0 if mine else -6.0)
 	_result.label_settings.font_color = OK_COLOR if correct else BAD_COLOR
 	_timer.text = ""
+	_bar.visible = false
 	_who.text = "Resultado"
 	_result_left = RESULT_TIME
 	_panel.reset_size.call_deferred()

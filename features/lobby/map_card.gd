@@ -11,7 +11,15 @@ const MINIMAPS := {
 	"science": preload("res://service/assets/ui/icons/ph_map_card_minimap_2.png"),
 }
 const VOTED_COLOR := Color(0.5, 1.6, 0.5)   # >1 para que el verde se note sobre el ladrillo rojo
-const DIMMED_COLOR := Color(0.75, 0.75, 0.75)
+const DIMMED_COLOR := Color(0.78, 0.62, 0.58)   # tinte cálido apagado (antes un gris plano)
+
+# Estilo del marco del mapa: brasa/lava como la sala. Seleccionado = borde naranja con resplandor que pulsa.
+const EMBER_BORDER := Color(1.0, 0.52, 0.12)
+const EMBER_BORDER_HOT := Color(1.0, 0.82, 0.35)
+const EMBER_GLOW := Color(1.0, 0.35, 0.05, 0.55)
+const EMBER_BG := Color(0.22, 0.07, 0.05, 0.96)
+const IDLE_BORDER := Color(0.42, 0.2, 0.16)
+const IDLE_BG := Color(0.11, 0.05, 0.05, 0.94)
 
 @onready var panel: PanelContainer = $HBoxContainer/PanelContainer
 @onready var count_label: Label = %CountLabel
@@ -19,8 +27,18 @@ const DIMMED_COLOR := Color(0.75, 0.75, 0.75)
 @onready var vote_button: Button = %VoteButton
 
 var map_id := ""
+var _selected := false
+var _applied := false
+var _pulse: Tween
+var _style_on: StyleBoxFlat
+var _style_off: StyleBoxFlat
 
 func _ready() -> void:
+	_style_on = _make_style(EMBER_BORDER, EMBER_BG, 4)
+	_style_on.shadow_color = EMBER_GLOW
+	_style_on.shadow_size = 7
+	_style_off = _make_style(IDLE_BORDER, IDLE_BG, 3)
+	panel.add_theme_stylebox_override("panel", _style_off)
 	panel.mouse_entered.connect(func(): selected.emit(map_id))
 	panel.gui_input.connect(_on_panel_gui_input)
 	# Tambien se selecciona (vista previa) al pasar el mouse por la flecha de votar.
@@ -39,7 +57,36 @@ func set_voted(voted: bool) -> void:
 	vote_button.self_modulate = VOTED_COLOR if voted else Color.WHITE
 
 func set_selected(is_selected: bool) -> void:
+	if _applied and is_selected == _selected:
+		return                                   # _refresh_maps lo llama en cada cambio: no reinicia el pulso
+	_applied = true
+	_selected = is_selected
 	modulate = Color.WHITE if is_selected else DIMMED_COLOR
+	if _pulse != null:
+		_pulse.kill()
+		_pulse = null
+	if _style_on == null:
+		return
+	if is_selected:
+		panel.add_theme_stylebox_override("panel", _style_on)
+		_pulse = create_tween().set_loops().set_trans(Tween.TRANS_SINE)
+		_pulse.tween_property(_style_on, "border_color", EMBER_BORDER_HOT, 0.9)
+		_pulse.parallel().tween_property(_style_on, "shadow_size", 11, 0.9)
+		_pulse.tween_property(_style_on, "border_color", EMBER_BORDER, 0.9)
+		_pulse.parallel().tween_property(_style_on, "shadow_size", 6, 0.9)
+	else:
+		_style_on.border_color = EMBER_BORDER
+		_style_on.shadow_size = 7
+		panel.add_theme_stylebox_override("panel", _style_off)
+
+func _make_style(border: Color, bg: Color, width: int) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = bg
+	box.border_color = border
+	box.set_border_width_all(width)
+	box.set_content_margin_all(1)
+	box.anti_aliasing = false
+	return box
 
 func _on_panel_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:

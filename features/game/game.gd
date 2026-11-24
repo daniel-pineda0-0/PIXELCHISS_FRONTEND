@@ -24,6 +24,8 @@ func _ready() -> void:
 	_build_board_view()
 	_setup_debug_overlay()
 	GameNet.fatal.connect(_on_fatal)
+	_update_background(GameNet.state)         # solo el primer fondo; despues manda la zona de la camara
+	view.zone_blend.connect(Callable($GameBackground, "set_blend"))
 	GameNet.events_received.connect(_on_events)
 	for signal_ref in [GameNet.state_changed, GameNet.status_changed, GameNet.busy_changed]:
 		signal_ref.connect(func(_arg = null): _refresh_debug())
@@ -34,6 +36,7 @@ func _ready() -> void:
 	GameNet.join(GameState.game_id)
 
 func _exit_tree() -> void:
+	Presenter.busy_probe = Callable()
 	# Si la escena se cierra por cualquier otro camino, no deja el socket abierto.
 	if GameNet.status != GameNet.Status.IDLE and GameState.state != GameState.State.GAME:
 		GameNet.leave()
@@ -51,15 +54,24 @@ func _build_board_view() -> void:
 	view.name = "BoardView"
 	add_child(view)
 	view.setup(world, $Pieces, $Halos, $Targets)
-	GameNet.state_changed.connect(view.refresh)
+	Presenter.state_shown.connect(view.refresh)       # el tablero muestra lo que reproduce el Presenter, en orden
+	Presenter.idle_changed.connect(view.on_overlays_changed)
 	GameNet.legal_moves_changed.connect(view.on_overlays_changed)
 	GameNet.busy_changed.connect(view.on_overlays_changed)
-	GameNet.events_received.connect(view.handle_events)
+	Presenter.events_shown.connect(view.handle_events)
+	Presenter.busy_probe = view.animation_remaining   # no se muestra la siguiente jugada mientras una ficha aun se mueve
 	var ui := get_node_or_null("GameUI")
 	if ui != null and ui.has_signal("view_step"):
 		ui.connect("view_step", view.step_focus)
-	if not GameNet.state.is_empty():
-		view.refresh(GameNet.state)
+	if not Presenter.shown.is_empty():
+		view.refresh(Presenter.shown)
+
+## Fondo inicial: el color del asiento del jugador local (luego cambia con la zona que se mira).
+func _update_background(_state: Dictionary) -> void:
+	if GameNet.me == "":
+		return
+	var seat: int = int(GameNet.player(GameNet.me).get("seat", 0))
+	$GameBackground.call("set_seat", seat)
 
 func _on_fatal(_code: String, message: String) -> void:
 	GameState.leave_game(message)
@@ -70,12 +82,13 @@ func _on_events(events: Array, version: int) -> void:
 	var names := PackedStringArray()
 	for e in events:
 		names.append(str(e.get("type", "?")))
-	print("[game] v%d %s" % [version, ", ".join(names)])
+	print("[game] %6d ms v%d %s" % [Time.get_ticks_msec() % 1000000, version, ", ".join(names)])
 
 # --- Overlay de depuración (solo builds de debug) ---
 
 func _setup_debug_overlay() -> void:
 	if OS.is_debug_build():
+		$DebugOverlay.visible = false        # F3 la muestra u oculta: no tapa el minimapa
 		return
 	$DebugOverlay.queue_free()       # el texto de depuración solo existe en debug
 	_debug = null
@@ -95,3 +108,8 @@ func _refresh_debug() -> void:
 		if turn is Dictionary:
 			lines.append("turno: %s%s" % [str(turn.get("playerId", "")), " (yo)" if GameNet.is_my_turn() else ""])
 	_debug.text = "\n".join(lines)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _debug != null and event is InputEventKey and event.pressed and not event.echo \
+			and event.keycode == KEY_F3:
+		$DebugOverlay.visible = not $DebugOverlay.visible

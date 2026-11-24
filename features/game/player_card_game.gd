@@ -27,9 +27,19 @@ var _active := false
 var _pulse := 0.0
 var _seat_color := Color.WHITE
 var _block: StyleBoxTexture
+var _retire_ms := -1.0                 # retireAt (ms Unix) si el jugador está desconectado
+var _conn_label: Label
 
 func _ready() -> void:
 	set_process(false)
+	if _effect_label != null:                  # etiqueta de «desconectado»: copia de la de efectos
+		_conn_label = _effect_label.duplicate() as Label
+		_conn_label.unique_name_in_owner = false
+		_conn_label.visible = false
+		_conn_label.clip_text = false
+		_conn_label.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
+		_conn_label.self_modulate = Color(1.0, 0.5, 0.45)
+		_effect_label.get_parent().add_child(_conn_label)
 	_block = StyleBoxTexture.new()
 	_block.texture = BRICK
 	_block.texture_margin_left = 6.0
@@ -60,12 +70,30 @@ func setup(seat: int, tooltip := "") -> void:
 func set_active(active: bool) -> void:
 	_active = active
 	modulate = Color.WHITE if active else DIM
-	set_process(active)
+	set_process(active or _retire_ms > 0.0)
 	queue_redraw()
+
+## Marca al jugador como desconectado con cuenta atrás hasta `retire_ms` (ms Unix); -1 lo quita.
+func set_disconnected(retire_ms: float) -> void:
+	_retire_ms = retire_ms
+	set_process(_active or _retire_ms > 0.0)
+	_update_conn_label()
+
+func _update_conn_label() -> void:
+	if _conn_label == null:
+		return
+	_conn_label.visible = _retire_ms > 0.0
+	if _retire_ms > 0.0:
+		var secs := maxi(0, ceili((_retire_ms - Time.get_unix_time_from_system() * 1000.0) / 1000.0))
+		_conn_label.text = "SIN CONEXION %ds" % secs
+		_conn_label.tooltip_text = "Desconectado: se retira de la partida si no vuelve a tiempo"
 
 func _process(delta: float) -> void:
 	_pulse += delta
-	queue_redraw()
+	if _retire_ms > 0.0:
+		_update_conn_label()
+	if _active:
+		queue_redraw()
 
 ## Bloque de ladrillo de la tarjeta y, en quien tiene el turno, un aro pulsante del color del asiento.
 func _draw() -> void:

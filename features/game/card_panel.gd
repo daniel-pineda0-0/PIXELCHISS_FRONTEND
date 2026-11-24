@@ -12,7 +12,7 @@ extends Control
 ## El panel no deja de pasar los clics al tablero, salvo en sus propios botones.
 ## Los nodos viven en card_panel.tscn (nombres únicos %); aquí solo se rellenan.
 
-const REVEAL_TIME := 2.6
+const REVEAL_TIME := 7.0           # buff/debuff aplicado: tiempo para leer qué hace la carta
 const LOW_TIME := 5
 const CHOICE_SIZE := Vector2(110, 24)
 const BUFF_COLOR := Color(0.55, 1.0, 0.6)

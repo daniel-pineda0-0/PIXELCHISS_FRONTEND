@@ -592,7 +592,7 @@ func _rebuild_overlays() -> void:
 	if _selected_piece != _focused_piece:
 		_focused_piece = _selected_piece
 		if _selected_piece != "" and _placements.has(_selected_piece):
-			_focus_placement(_placements[_selected_piece])
+			_frame_selection()
 	_focus_card_targets(card_choices)
 	if _crown_ids.is_empty():
 		_focused_crown = ""
@@ -602,6 +602,49 @@ func _rebuild_overlays() -> void:
 		if not first.is_empty():
 			_focus_placement(first)
 	_place_pieces()
+
+## Encuadra la ficha elegida Y sus destinos. Antes la cámara iba al centro del chunk de la ficha, y
+## con destinos en el chunk vecino (o lejos de ese centro) se quedaban fuera de pantalla. Ahora toma
+## la ficha y todos los marcadores sobre el anillo (copia más cercana a la ficha) y centra el conjunto;
+## si no caben en pantalla, prioriza que se vea la ficha y el primer destino.
+func _frame_selection() -> void:
+	var pl: Dictionary = _placements.get(_selected_piece, {})
+	if camera == null or pl.is_empty() or not _chunks.has(pl.chunk):
+		return
+	if _is_lane_cell(pl.cell):
+		_focus_placement(pl)                       # corredor final: su propia pantalla
+		return
+	if _view_lane >= 0 or _view_target >= 0:
+		_switch_view(-1)
+	var ring := BoardMap.SEATS * CHUNK_WIDTH
+	var piece_x := _cell_world(pl.chunk, pl.cell).x + float(pl.shift)
+	var min_x := piece_x
+	var max_x := piece_x
+	var first_dx := 0.0
+	var count := 0
+	for target in _targets:
+		if _is_lane_cell(target.cell) or not _chunks.has(target.chunk):
+			continue
+		var dx := fposmod(_cell_world(target.chunk, target.cell).x - piece_x + ring / 2.0, ring) - ring / 2.0
+		min_x = minf(min_x, piece_x + dx)
+		max_x = maxf(max_x, piece_x + dx)
+		if count == 0:
+			first_dx = dx
+		count += 1
+	var visible_w := get_viewport().get_visible_rect().size.x / VIEW_ZOOM
+	var margin := 56.0                              # que no queden pegados al borde (y lejos de los botones)
+	var center := (min_x + max_x) * 0.5
+	if max_x - min_x > visible_w - margin * 2.0:
+		# no caben todos: ficha y primer destino
+		var lo := minf(piece_x, piece_x + first_dx)
+		var hi := maxf(piece_x, piece_x + first_dx)
+		center = (lo + hi) * 0.5
+		if hi - lo > visible_w - margin * 2.0:
+			center = piece_x + signf(first_dx) * (visible_w * 0.5 - margin)
+	_follow_piece = ""
+	_cam_target_x = center
+	_pan_dir = 0
+	_press_dir = 0
 
 ## Texto del destino: el valor del dado, o "4+2" cuando el movimiento usa la suma de
 ## los dos dados (`dieIndex` 2).
@@ -745,7 +788,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			GameNet.crown(best)                   # CROWN_REQUEST: no hay destinos que elegir
 			return
 		_selected_piece = best
+		_focused_piece = best                       # el reencuadre lo hace este toque, no el rebuild
 		_rebuild_overlays()
+		_frame_selection()
 		return
 	# Escaleras: tocar la de un chunk baja a su corredor final; tocar la del corredor sube de vuelta.
 	if _view_lane >= 0:

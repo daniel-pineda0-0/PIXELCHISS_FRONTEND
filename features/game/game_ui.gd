@@ -86,6 +86,8 @@ var _confirmed_roll := ""           # rollId cuya animación ya confirmé
 var _confirm_tries := {}            # rollId -> intentos de confirmación (para no reintentar sin fin)
 var _end_armed_version := -1         # versión en la que ya avisé "puedes capturar" antes de pasar
 var _result_scheduled := false
+var _retire_at := {}                 # id de jugador -> retireAt (ms Unix) de PLAYER_DISCONNECTED
+var _dice_glow: DiceGlow
 var _dice_overlay: DiceOverlay
 var _last_dice := {}                # asiento -> últimos dados que sacó (se conservan entre turnos)
 var _pending_events: Array = []     # eventos en espera mientras ruedan los dados
@@ -107,6 +109,9 @@ func _ready() -> void:
 	overlay_host.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(overlay_host)
 	overlay_host.add_child(_dice_overlay)
+	_dice_glow = DiceGlow.new()
+	_dice_glow.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_dices_panel.add_child(_dice_glow)
 	_roll_button.pressed.connect(_on_roll_pressed)
 	_roll_button.focus_mode = Control.FOCUS_NONE
 	_end_button.pressed.connect(_on_end_turn_pressed)
@@ -238,6 +243,7 @@ func _refresh_turn(state: Dictionary) -> void:
 			card.show_dice(_last_dice.get(seat, []), consumed if is_active else [])
 		card.set_crowned(int(crowned.get(seat, 0)))
 		card.set_effects(effects.get(seat, []))
+		card.set_disconnected(_seat_retire_time(state, seat))
 
 	if _dices != null and not holding:
 		var my_seat := int(GameNet.player(GameNet.me).get("seat", -1))
@@ -247,6 +253,13 @@ func _refresh_turn(state: Dictionary) -> void:
 	_update_turn_label()
 	if state.get("status") != "ACTIVE":
 		_schedule_result()
+
+## retireAt (ms) del jugador de ese asiento si está desconectado; -1 si no.
+func _seat_retire_time(state: Dictionary, seat: int) -> float:
+	for p in state.get("players", []):
+		if int(p.get("seat", -1)) == seat:
+			return _retire_time(p)
+	return -1.0
 
 ## Fichas coronadas por asiento, contadas del snapshot.
 func _crowned_by_seat(state: Dictionary) -> Dictionary:
@@ -370,8 +383,18 @@ func _process(delta: float) -> void:
 		_update_turn_label()
 		_countdown_beep()
 	if _dices_panel != null:
-		var pulse := 0.65 + 0.35 * sin(Time.get_ticks_msec() / 1000.0 * 6.0)
-		_dices_panel.modulate = Color(1.0, 1.0, pulse) if _can_roll() else Color.WHITE
+		var my_roll := _can_roll()
+		var t := Time.get_ticks_msec() / 1000.0
+		_dices_panel.pivot_offset = _dices_panel.size * 0.5
+		if my_roll:                                # tu turno y toca lanzar: el panel late y se ilumina
+			var beat := 0.5 + 0.5 * sin(t * 6.0)
+			_dices_panel.scale = Vector2.ONE * (1.0 + 0.10 * beat)
+			_dices_panel.modulate = Color(1.0, 1.0, 0.55 + 0.45 * (1.0 - beat))
+		else:
+			_dices_panel.scale = Vector2.ONE
+			_dices_panel.modulate = Color.WHITE
+		if _dice_glow != null:
+			_dice_glow.set_on(my_roll)
 	_update_hover()
 
 # --- Acciones del jugador ---------------------------------------------------------------------
@@ -519,8 +542,52 @@ func _handle_event(e: Variant) -> void:
 		"EFFECT_EXPIRED":
 			if str(data.get("playerId", "")) == GameNet.me:
 				_toast("Terminó el efecto: " + GameText.effect_name(str(data.get("effectCode", ""))))
+		"PLAYER_DISCONNECTED":
+			_on_player_disconnected(data)
+		"PLAYER_RECONNECTED":
+			var back := str(data.get("playerId", ""))
+			_retire_at.erase(back)
+			if back != GameNet.me:
+				_toast("%s volvió a la partida" % _short_name(_player_name(back)))
+			_refresh_turn(_view())
+		"PLAYER_RETIRED":
+			var gone := str(data.get("playerId", ""))
+			_retire_at.erase(gone)
+			if gone == GameNet.me:
+				_toast("Fuiste retirado de la partida", true)
+			else:
+				_toast("%s fue retirado: sus fichas vuelven a casa" % _short_name(_player_name(gone)), true)
+			_refresh_turn(_view())
 		"GAME_FINISHED", "GAME_ABANDONED":
 			_schedule_result()
+
+## Un jugador perdió la conexión: aviso a los demás y cuenta atrás en su tarjeta hasta `retireAt`.
+func _on_player_disconnected(data: Dictionary) -> void:
+	var who := str(data.get("playerId", ""))
+	if who == "" or who == GameNet.me:
+		return
+	var at: Variant = data.get("retireAt")
+	if at != null:
+		_retire_at[who] = float(at)
+	var secs := GameText.seconds_until(at)
+	var name_text := _short_name(_player_name(who))
+	_toast("%s se desconectó%s" % [name_text, " (%d s para volver)" % secs if secs > 0 else ""], true)
+	_refresh_turn(_view())
+
+## Momento (ms Unix) en que se retira a un desconectado, o -1 si no lo está.
+func _retire_time(p: Dictionary) -> float:
+	var pid := str(p.get("id", ""))
+	if bool(p.get("retired", false)):
+		return -1.0
+	if _retire_at.has(pid):
+		return float(_retire_at[pid])
+	var since: Variant = p.get("disconnectedAt")
+	if since == null:
+		return -1.0
+	var ms := float(since)
+	if ms < 1.0e11:                                # vino en segundos
+		ms *= 1000.0
+	return ms + 60000.0                            # gracia del servidor (GAME_DISCONNECT_GRACE_MILLIS)
 
 func _on_dice_rolled(data: Dictionary) -> void:
 	var who := str(data.get("playerId", ""))

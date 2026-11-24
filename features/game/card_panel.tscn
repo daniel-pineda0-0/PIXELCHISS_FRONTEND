@@ -1,7 +1,7 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://eyx6nm2dy3kv"]
 
-[ext_resource type="Script" path="res://features/game/card_panel.gd" id="script"]
-[ext_resource type="FontFile" path="res://service/assets/ui/theme/PressStart2P.ttf" id="font"]
+[ext_resource type="FontFile" uid="uid://bbbnsoretj02p" path="res://service/assets/ui/theme/PressStart2P.ttf" id="font"]
+[ext_resource type="Script" uid="uid://doigy4oufpdbe" path="res://features/game/card_panel.gd" id="script"]
 
 [sub_resource type="LabelSettings" id="LS_kind"]
 resource_local_to_scene = true
@@ -18,7 +18,7 @@ resource_local_to_scene = true
 font = ExtResource("font")
 font_size = 8
 
-[node name="CardPanel" type="Control"]
+[node name="CardPanel" type="Control" unique_id=1323786622]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -28,7 +28,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("script")
 
-[node name="Panel" type="PanelContainer" parent="."]
+[node name="Panel" type="PanelContainer" parent="." unique_id=2129727425]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(232, 0)
@@ -43,7 +43,7 @@ offset_bottom = 44.0
 grow_horizontal = 2
 mouse_filter = 2
 
-[node name="Margin" type="MarginContainer" parent="Panel"]
+[node name="Margin" type="MarginContainer" parent="Panel" unique_id=719545381]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 6
@@ -51,12 +51,12 @@ theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 6
 theme_override_constants/margin_bottom = 6
 
-[node name="Box" type="VBoxContainer" parent="Panel/Margin"]
+[node name="Box" type="VBoxContainer" parent="Panel/Margin" unique_id=352111941]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 4
 
-[node name="KindLabel" type="Label" parent="Panel/Margin/Box"]
+[node name="KindLabel" type="Label" parent="Panel/Margin/Box" unique_id=35723380]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
@@ -64,7 +64,7 @@ label_settings = SubResource("LS_kind")
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="TitleLabel" type="Label" parent="Panel/Margin/Box"]
+[node name="TitleLabel" type="Label" parent="Panel/Margin/Box" unique_id=1485867466]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
@@ -72,7 +72,7 @@ label_settings = SubResource("LS_text")
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="DescLabel" type="Label" parent="Panel/Margin/Box"]
+[node name="DescLabel" type="Label" parent="Panel/Margin/Box" unique_id=588834579]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
@@ -80,7 +80,7 @@ label_settings = SubResource("LS_text")
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="HintLabel" type="Label" parent="Panel/Margin/Box"]
+[node name="HintLabel" type="Label" parent="Panel/Margin/Box" unique_id=823641306]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
@@ -88,7 +88,7 @@ label_settings = SubResource("LS_text")
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="TimerLabel" type="Label" parent="Panel/Margin/Box"]
+[node name="TimerLabel" type="Label" parent="Panel/Margin/Box" unique_id=475262286]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
@@ -96,7 +96,7 @@ label_settings = SubResource("LS_timer")
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="Choices" type="VBoxContainer" parent="Panel/Margin/Box"]
+[node name="Choices" type="VBoxContainer" parent="Panel/Margin/Box" unique_id=991723125]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2

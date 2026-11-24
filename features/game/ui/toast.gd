@@ -2,7 +2,7 @@ class_name Toast
 extends Control
 ## Aviso flotante en cola + destello rojo de pantalla (capturas, soplos, errores).
 
-const TIME := 1.8
+const TIME := 2.6
 const MAX_QUEUE := 3
 
 @onready var _label: Label = %Label

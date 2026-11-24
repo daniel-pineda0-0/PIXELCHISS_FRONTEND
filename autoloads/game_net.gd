@@ -304,7 +304,8 @@ func _open_link(token: String) -> Link:
 	var link := Link.new()
 	link.token = token
 	link.peer.inbound_buffer_size = INBOUND_BUFFER
-	if link.peer.connect_to_url(Config.WS_URL) != OK:    # sin query string ni headers
+	# LAN: wss:// con TLSOptions.client(ca) de la CA verificada (null en local). Sin query ni headers.
+	if link.peer.connect_to_url(Config.WS_URL, Config.tls_options()) != OK:
 		return null
 	return link
 

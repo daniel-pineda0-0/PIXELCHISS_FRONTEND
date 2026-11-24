@@ -4,6 +4,9 @@ func request(method: int, path: String, body: Variant = null,
 		auth := true, retry := true, timeout := 10.0) -> Dictionary:
 	var http := HTTPRequest.new()
 	http.timeout = timeout          # sin esto, un Gateway colgado dejaria la peticion esperando para siempre
+	var tls := Config.tls_options()  # LAN: TLS estricto contra la CA verificada (null en modo local)
+	if tls != null:
+		http.set_tls_options(tls)
 	add_child(http)
 	var headers := ["Content-Type: application/json"]
 	if auth and Session.access_token != "":
@@ -23,9 +26,13 @@ func request(method: int, path: String, body: Variant = null,
 
 ## ¿Responde el Gateway en `base_url`? GET /actuator/health, sin JWT (guía §1.1).
 ## {"ok": bool, "status": int}: status 0 = no hubo respuesta HTTP (host caído, IP errónea, timeout).
-func ping(base_url: String, timeout := 5.0) -> Dictionary:
+func ping(base_url: String, timeout := 5.0, tls: TLSOptions = null) -> Dictionary:
 	var http := HTTPRequest.new()
 	http.timeout = timeout
+	if base_url.begins_with("https://"):              # nunca client_unsafe: solo la CA verificada
+		var strict := tls if tls != null else Config.tls_options()
+		if strict != null:
+			http.set_tls_options(strict)
 	add_child(http)
 	if http.request(base_url + "/actuator/health") != OK:
 		http.queue_free()
@@ -39,9 +46,9 @@ func ping(base_url: String, timeout := 5.0) -> Dictionary:
 ## Espera a que el servidor conteste, con reintentos de espera creciente: justo tras arrancar
 ## puede dar 500/502/503 transitorios mientras Eureka registra los servicios (guía §1.1).
 ## Un 4xx/404 no se reintenta: ahí hay otro servicio, no el Gateway.
-func wait_for_server(base_url: String, attempts := 2, timeout := 4.0) -> bool:
+func wait_for_server(base_url: String, attempts := 2, timeout := 4.0, tls: TLSOptions = null) -> bool:
 	for i in attempts:
-		var r: Dictionary = await ping(base_url, timeout)
+		var r: Dictionary = await ping(base_url, timeout, tls)
 		if r.ok:
 			return true
 		var status: int = r.status

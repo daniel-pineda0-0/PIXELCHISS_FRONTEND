@@ -1,157 +1,104 @@
 [gd_scene format=3 uid="uid://cp50pbxumky4s"]
 
 [ext_resource type="Script" uid="uid://d0v7ho4u5b3j1" path="res://features/server/server.gd" id="1_bo883"]
+[ext_resource type="PackedScene" path="res://features/auth/login_background.tscn" id="2_bg"]
+[ext_resource type="Theme" path="res://service/assets/ui/theme/pixel_theme.tres" id="3_theme"]
+[ext_resource type="PackedScene" path="res://features/settings/settings_button.tscn" id="4_settings"]
 
-[node name="ServerScreen" type="Control" unique_id=1396237336]
+[node name="ServerScreen" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("3_theme")
 script = ExtResource("1_bo883")
+metadata/_edit_use_anchors_ = true
 
-[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1005747434]
+[node name="LoginBackground" parent="." instance=ExtResource("2_bg")]
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(264, 150)
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -132.0
+offset_top = -75.0
+offset_right = 132.0
+offset_bottom = 75.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="PanelContainer" type="PanelContainer" parent="CenterContainer" unique_id=1962154242]
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_constants/separation = 8
 
-[node name="MarginContainer" type="MarginContainer" parent="CenterContainer/PanelContainer" unique_id=236662565]
-layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 16
-
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer" unique_id=15686312]
-custom_minimum_size = Vector2(420, 0)
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=2027915340]
+[node name="TitleLabel" type="Label" parent="PanelContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 16
 text = "Conectar al servidor"
 
-[node name="MessageLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=2096704632]
+[node name="MessageLabel" type="Label" parent="PanelContainer/VBoxContainer"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
-theme_override_font_sizes/font_size = 8
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.6039, 0.6039, 0.6039, 1)
 text = "No se pudo conectar con el servidor."
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="AddressEdit" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1674011497]
+[node name="AddressEdit" type="LineEdit" parent="PanelContainer/VBoxContainer"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 24)
 layout_mode = 2
-theme_override_font_sizes/font_size = 8
-placeholder_text = "IP o dirección, p. ej. 192.168.1.5:8080"
+size_flags_horizontal = 4
+placeholder_text = "IP:PUERTO  (192.168.1.5:8080)"
 alignment = 1
 max_length = 100
 clear_button_enabled = true
 
-[node name="StatusLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=327948537]
+[node name="StatusLabel" type="Label" parent="PanelContainer/VBoxContainer"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
-theme_override_font_sizes/font_size = 8
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.6039, 0.6039, 0.6039, 1)
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="Buttons" type="HBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1219970346]
-unique_name_in_owner = true
+[node name="Buttons" type="HBoxContainer" parent="PanelContainer/VBoxContainer"]
 layout_mode = 2
+size_flags_horizontal = 4
 theme_override_constants/separation = 8
-alignment = 1
 
-[node name="ConnectButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/Buttons" unique_id=942890287]
+[node name="ConnectButton" type="Button" parent="PanelContainer/VBoxContainer/Buttons"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(76, 24)
 layout_mode = 2
-theme_override_font_sizes/font_size = 8
+focus_mode = 0
 text = "Conectar"
 
-[node name="LocalButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/Buttons" unique_id=1170486671]
+[node name="LocalButton" type="Button" parent="PanelContainer/VBoxContainer/Buttons"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(76, 24)
 layout_mode = 2
-theme_override_font_sizes/font_size = 8
+focus_mode = 0
 text = "Este equipo"
 
-[node name="CancelButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/Buttons" unique_id=448434329]
+[node name="CancelButton" type="Button" parent="PanelContainer/VBoxContainer/Buttons"]
 unique_name_in_owner = true
 visible = false
+custom_minimum_size = Vector2(76, 24)
 layout_mode = 2
-theme_override_font_sizes/font_size = 8
+focus_mode = 0
 text = "Cancelar"
 
-[node name="ForgetButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/Buttons" unique_id=1500000001]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-theme_override_font_sizes/font_size = 8
-text = "Olvidar CA"
-
-[node name="VerifyBox" type="VBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1500000002]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="VerifyTitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/VerifyBox" unique_id=1500000003]
-layout_mode = 2
-theme_override_font_sizes/font_size = 10
-text = "Verificar huella de la CA"
-horizontal_alignment = 1
-
-[node name="VerifyHostLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/VerifyBox" unique_id=1500000004]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 8
-horizontal_alignment = 1
-autowrap_mode = 3
-
-[node name="FingerprintLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/VerifyBox" unique_id=1500000005]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 40)
-layout_mode = 2
-theme_override_font_sizes/font_size = 8
-horizontal_alignment = 1
-autowrap_mode = 3
-
-[node name="OldFingerprintLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/VerifyBox" unique_id=1500000006]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.55, 0.45, 1)
-theme_override_font_sizes/font_size = 8
-horizontal_alignment = 1
-autowrap_mode = 3
-
-[node name="VerifyPromptLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/VerifyBox" unique_id=1500000007]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 8
-horizontal_alignment = 1
-autowrap_mode = 3
-
-[node name="VerifyButtons" type="HBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/VerifyBox" unique_id=1500000008]
-layout_mode = 2
-theme_override_constants/separation = 8
-alignment = 1
-
-[node name="ConfirmButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/VerifyBox/VerifyButtons" unique_id=1500000009]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 8
-text = "Coinciden: confirmar"
-
-[node name="RejectButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/VerifyBox/VerifyButtons" unique_id=1500000010]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 8
-text = "No coinciden: rechazar"
+[node name="SettingsButton" parent="." instance=ExtResource("4_settings")]

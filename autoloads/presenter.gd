@@ -27,6 +27,17 @@ const LAG_BUDGET := 6.0
 ## Ademas, una jugada no se muestra hasta que terminen las fichas que aun se mueven (por ejemplo la bajada por la
 ## escalera al corredor, que dura mas que MOVE_WAIT). Tope por jugada, por si algo se quedara colgado:
 const MAX_ANIM_WAIT_MS := 7000
+## Pausa EXTRA que se deja ver cuando juega un bot (solo lo que se dibuja: el servidor no cambia ni espera).
+## Sin esto los bots se sienten acelerados: tiran, mueven y pasan casi seguidos. Para no desincronizarse
+## (turnos que "se saltan", tus botones tardando) la pausa tiene tres frenos:
+##   - solo aplica si el cliente va casi al dia: si esta version ya llego hace mas de BOT_MAX_LAG segundos, no se anade;
+##   - nunca se anade cuando la version le pasa el turno a una persona (tu turno aparece sin demora);
+##   - la cola y LAG_BUDGET siguen igual, asi que si algo se atrasa se pone al dia solo.
+## Para bots mas rapidos o mas lentos basta con subir o bajar estos tres numeros (0 = como antes).
+const BOT_EXTRA_ROLL := 0.8     # tras ver tirar a un bot
+const BOT_EXTRA_MOVE := 0.9     # tras ver mover/capturar/coronar a un bot
+const BOT_EXTRA_TURN := 0.5     # tras un aviso o cambio de turno entre bots
+const BOT_MAX_LAG := 2.5        # segundos maximos de atraso para seguir anadiendo la pausa
 ## Tu propia jugada llega primero como ACTION_ACK (estado SIN eventos) y los eventos vienen despues en el
 ## GAME_UPDATED. Una version sin eventos espera este margen a que lleguen antes de reproducirse.
 const EVENT_GRACE_MS := 150
@@ -154,6 +165,7 @@ func _notify_idle() -> void:
 func _play(entry: Dictionary, wait_after: bool) -> void:
 	var state: Dictionary = entry.state
 	var events: Array = entry.events
+	var prev_turn := _turn_player(shown)
 	var new_roll := _roll_id(state) != "" and _roll_id(state) != _roll_id(shown)
 	var rolled := _has(events, "DICE_ROLLED") or new_roll
 	var moved := _has(events, "PIECE_MOVED") or _has(events, "PIECE_CAPTURED") or _has(events, "PIECE_RELEASED") \
@@ -181,7 +193,36 @@ func _play(entry: Dictionary, wait_after: bool) -> void:
 		t += MOVE_WAIT
 	elif (turn_changed or not events.is_empty()) and not rolled:
 		t += SHORT_WAIT
+	if t > 0.0:
+		t += _bot_extra(entry, prev_turn, rolled, moved)
 	_wait = t
+
+## Pausa extra de una version jugada por un bot (ver BOT_EXTRA_*). 0 si juega una persona, si el turno pasa
+## a una persona o si el cliente ya va atrasado.
+func _bot_extra(entry: Dictionary, prev_turn: String, rolled: bool, moved: bool) -> float:
+	var now_turn := _turn_player(entry.state)
+	if now_turn == "" or not _is_bot(now_turn):
+		return 0.0                                     # el turno es de una persona (o no hay): sin demora extra
+	if prev_turn != "" and prev_turn != now_turn and not _is_bot(prev_turn):
+		return 0.0                                     # acaba de jugar una persona: lo suyo ya tiene su ritmo
+	var lag := float(Time.get_ticks_msec() - int(entry.get("t", Time.get_ticks_msec()))) / 1000.0
+	if lag > BOT_MAX_LAG:
+		return 0.0                                     # ya vamos atrasados: no acumular mas
+	if moved:
+		return BOT_EXTRA_MOVE
+	if rolled:
+		return BOT_EXTRA_ROLL
+	return BOT_EXTRA_TURN
+
+## Los jugadores del estado traen "bot" (GameState.Player del servidor); la sala trae "is_bot".
+func _is_bot(player_id: String) -> bool:
+	var p: Dictionary = GameNet.player(player_id)
+	if p.has("bot"):
+		return bool(p.bot)
+	for entry in Lobby.data.get("players", []):
+		if str(entry.get("user_id", "")) == player_id:
+			return bool(entry.get("is_bot", false))
+	return false
 
 static func _has(events: Array, type: String) -> bool:
 	for e in events:

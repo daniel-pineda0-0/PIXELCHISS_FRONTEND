@@ -10,7 +10,7 @@ extends Node
 
 signal finished(ok: bool)
 
-const EXPECTED_LAYOUT := "v4-100"
+const EXPECTED_LAYOUT := "v5-100"
 const EXPECTED_CELLS := 100
 
 const KIND_TRACK := "TRACK"              # recorrido común (0-67)

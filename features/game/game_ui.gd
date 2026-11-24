@@ -114,6 +114,7 @@ func _ready() -> void:
 	_dices_panel.add_child(_dice_glow)
 	_roll_button.pressed.connect(_on_roll_pressed)
 	_roll_button.focus_mode = Control.FOCUS_NONE
+	_disable_hud_focus(self)           # ningun boton del HUD debe poder activarse con espacio/enter
 	_end_button.pressed.connect(_on_end_turn_pressed)
 	_result_screen.back_pressed.connect(_on_result_back)
 
@@ -137,6 +138,28 @@ func _on_presenter_idle(_idle: bool) -> void:
 
 func _exit_tree() -> void:
 	RollHold.clear()
+
+## Los botones del HUD solo se usan con el raton: sin foco no los activa el teclado.
+func _disable_hud_focus(node: Node) -> void:
+	for child in node.get_children():
+		if child is BaseButton:
+			(child as BaseButton).focus_mode = Control.FOCUS_NONE
+		_disable_hud_focus(child)
+
+## Espacio = lanzar los dados (lo mismo que pulsar el boton de dados). Solo actua cuando
+## de verdad se puede lanzar, asi un espacio suelto no llena la pantalla de avisos.
+func _input(event: InputEvent) -> void:
+	if not (event is InputEventKey):
+		return
+	var key := event as InputEventKey
+	if not key.pressed or key.echo or key.keycode != KEY_SPACE:
+		return
+	var focused := get_viewport().gui_get_focus_owner()
+	if focused is LineEdit or focused is TextEdit:
+		return
+	get_viewport().set_input_as_handled()
+	if _can_roll():
+		_on_roll_pressed()
 
 ## Mientras ruedan los dados no se redibuja nada: al terminar, _process aplica el
 ## último estado (ver RollHold).

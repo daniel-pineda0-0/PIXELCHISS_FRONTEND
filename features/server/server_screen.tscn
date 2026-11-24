@@ -2,10 +2,10 @@
 
 [ext_resource type="Script" uid="uid://d0v7ho4u5b3j1" path="res://features/server/server.gd" id="1_bo883"]
 [ext_resource type="PackedScene" path="res://features/auth/login_background.tscn" id="2_bg"]
-[ext_resource type="Theme" path="res://service/assets/ui/theme/pixel_theme.tres" id="3_theme"]
+[ext_resource type="Theme" uid="uid://ds620wlne31r1" path="res://service/assets/ui/theme/pixel_theme.tres" id="3_theme"]
 [ext_resource type="PackedScene" path="res://features/settings/settings_button.tscn" id="4_settings"]
 
-[node name="ServerScreen" type="Control"]
+[node name="ServerScreen" type="Control" unique_id=870756525]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -16,9 +16,9 @@ theme = ExtResource("3_theme")
 script = ExtResource("1_bo883")
 metadata/_edit_use_anchors_ = true
 
-[node name="LoginBackground" parent="." instance=ExtResource("2_bg")]
+[node name="LoginBackground" parent="." unique_id=1329698754 instance=ExtResource("2_bg")]
 
-[node name="PanelContainer" type="PanelContainer" parent="."]
+[node name="PanelContainer" type="PanelContainer" parent="." unique_id=1824230425]
 custom_minimum_size = Vector2(264, 150)
 layout_mode = 1
 anchors_preset = 8
@@ -33,19 +33,19 @@ offset_bottom = 75.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer" unique_id=2108572215]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
 theme_override_constants/separation = 8
 
-[node name="TitleLabel" type="Label" parent="PanelContainer/VBoxContainer"]
+[node name="TitleLabel" type="Label" parent="PanelContainer/VBoxContainer" unique_id=629710758]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 16
 text = "Conectar al servidor"
 
-[node name="MessageLabel" type="Label" parent="PanelContainer/VBoxContainer"]
+[node name="MessageLabel" type="Label" parent="PanelContainer/VBoxContainer" unique_id=1410844517]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
@@ -55,7 +55,7 @@ text = "No se pudo conectar con el servidor."
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="AddressEdit" type="LineEdit" parent="PanelContainer/VBoxContainer"]
+[node name="AddressEdit" type="LineEdit" parent="PanelContainer/VBoxContainer" unique_id=181288407]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(240, 24)
 layout_mode = 2
@@ -65,7 +65,7 @@ alignment = 1
 max_length = 100
 clear_button_enabled = true
 
-[node name="StatusLabel" type="Label" parent="PanelContainer/VBoxContainer"]
+[node name="StatusLabel" type="Label" parent="PanelContainer/VBoxContainer" unique_id=1296525406]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(240, 0)
 layout_mode = 2
@@ -74,26 +74,26 @@ theme_override_colors/font_color = Color(0.6039, 0.6039, 0.6039, 1)
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="Buttons" type="HBoxContainer" parent="PanelContainer/VBoxContainer"]
+[node name="Buttons" type="HBoxContainer" parent="PanelContainer/VBoxContainer" unique_id=204709238]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_constants/separation = 8
 
-[node name="ConnectButton" type="Button" parent="PanelContainer/VBoxContainer/Buttons"]
+[node name="ConnectButton" type="Button" parent="PanelContainer/VBoxContainer/Buttons" unique_id=1720424469]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(76, 24)
 layout_mode = 2
 focus_mode = 0
 text = "Conectar"
 
-[node name="LocalButton" type="Button" parent="PanelContainer/VBoxContainer/Buttons"]
+[node name="LocalButton" type="Button" parent="PanelContainer/VBoxContainer/Buttons" unique_id=971524695]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(76, 24)
 layout_mode = 2
 focus_mode = 0
 text = "Este equipo"
 
-[node name="CancelButton" type="Button" parent="PanelContainer/VBoxContainer/Buttons"]
+[node name="CancelButton" type="Button" parent="PanelContainer/VBoxContainer/Buttons" unique_id=1862385176]
 unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(76, 24)
@@ -101,4 +101,4 @@ layout_mode = 2
 focus_mode = 0
 text = "Cancelar"
 
-[node name="SettingsButton" parent="." instance=ExtResource("4_settings")]
+[node name="SettingsButton" parent="." unique_id=2115825595 instance=ExtResource("4_settings")]

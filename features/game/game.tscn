@@ -2,18 +2,17 @@
 
 [ext_resource type="Script" uid="uid://c4hiwhg7qj2ct" path="res://features/game/game.gd" id="1_1j583"]
 [ext_resource type="PackedScene" uid="uid://c38is0wvg5vmn" path="res://features/game/game_ui.tscn" id="1_v3hai"]
-
 [ext_resource type="PackedScene" path="res://features/game/game_background.tscn" id="2_bg"]
 [ext_resource type="PackedScene" path="res://features/settings/settings_button.tscn" id="3_gear"]
 
 [node name="Game" type="Node2D" unique_id=7672585]
 script = ExtResource("1_1j583")
 
-[node name="GameBackground" parent="." instance=ExtResource("2_bg")]
+[node name="GameBackground" parent="." unique_id=255028083 instance=ExtResource("2_bg")]
 
 [node name="GameUI" parent="." unique_id=639558418 instance=ExtResource("1_v3hai")]
 
-[node name="SettingsButton" parent="." instance=ExtResource("3_gear")]
+[node name="SettingsButton" parent="." unique_id=1669245092 instance=ExtResource("3_gear")]
 
 [node name="Pieces" type="Node2D" parent="." unique_id=50958163]
 z_index = 10

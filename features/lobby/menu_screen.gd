@@ -9,6 +9,7 @@ extends Control
 @onready var status_label: Label = %StatusLabel
 
 func _ready() -> void:
+	Music.play(&"login")               # si se restauro la sesion no se paso por el login: que suene igual
 	status_label.text = Lobby.notice    # p. ej. "Fuiste expulsado de la sala"
 	Lobby.notice = ""
 	code_input.text_changed.connect(_on_code_input_text_changed)
